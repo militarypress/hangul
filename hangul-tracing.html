@@ -42,7 +42,14 @@ textarea{min-height:92px;resize:vertical;font-size:18px}
 .sheet-head{display:flex;justify-content:space-between;align-items:flex-end;gap:8mm;margin-bottom:6mm;font-size:13pt;color:var(--ink)}
 .sheet-head b{font-family:var(--display);font-weight:400;font-size:18pt}
 .blank-line{display:inline-block;width:38mm;border-bottom:1px solid var(--ink);margin-left:2mm}
+.sheet{width:100%;border-collapse:collapse}
+.sheet td{padding:0;vertical-align:top}
+.sheet thead{display:table-header-group} /* 인쇄 시 페이지마다 반복 */
 .word{margin-bottom:6mm;break-inside:avoid;page-break-inside:avoid}
+.wordrow{break-inside:avoid;page-break-inside:avoid}
+.wordrow.newpage{break-before:page;page-break-before:always}
+.caption{font-size:15pt;line-height:1.3;margin:0 0 2mm;color:var(--ink)}
+.caption small{font-size:9pt;color:#777;margin-right:2mm}
 .row{display:flex;gap:3mm;margin-bottom:1.5mm}
 .group{display:flex;flex-wrap:wrap}
 .cell{width:var(--cell);height:var(--cell);display:block;margin-right:-0.25mm}
@@ -97,6 +104,8 @@ textarea{min-height:92px;resize:vertical;font-size:18px}
     </div>
     <label class="check" for="guide"><input type="checkbox" id="guide" checked> 칸 안에 십자 보조선</label>
     <label class="check" for="blank"><input type="checkbox" id="blank" checked> 마지막은 빈칸으로 (혼자 써 보기)</label>
+    <label class="check" for="caption"><input type="checkbox" id="caption" checked> 낱말마다 위에 제목 쓰기</label>
+    <label class="check" for="pageEach"><input type="checkbox" id="pageEach"> 낱말마다 새 페이지에서 시작</label>
     <div><label for="title">학습지 제목</label><input type="text" id="title" value="한글 따라쓰기"></div>
     <button type="button" class="print" id="print">인쇄하기</button>
     <p class="hint" id="hint" hidden>이 화면에서는 인쇄 창이 열리지 않습니다. 대화에 함께 받은 파일(hangul-tracing.html)을 크롬이나 엣지에서 열면 같은 화면에서 인쇄 단추가 작동합니다.</p>
@@ -120,14 +129,16 @@ textarea{min-height:92px;resize:vertical;font-size:18px}
     return s+'</svg>';
   }
   function render(){
-    var o={style:$('style').value,size:+$('size').value,lines:+$('lines').value,font:$('font').value,guide:$('guide').checked,blank:$('blank').checked};
+    var o={style:$('style').value,size:+$('size').value,lines:+$('lines').value,font:$('font').value,guide:$('guide').checked,blank:$('blank').checked,caption:$('caption').checked,pageEach:$('pageEach').checked};
     var words=$('words').value.split(/[\s,]+/).filter(Boolean);
     var cols=Math.max(1,Math.floor(USABLE/o.size));
-    var h='<div class="sheet-head"><b>'+esc($('title').value)+'</b><span>이름<i class="blank-line"></i> &nbsp; 날짜<i class="blank-line"></i></span></div>';
-    if(!words.length) h+='<p class="empty">왼쪽에 글자나 낱말을 적어 주세요.</p>';
-    words.forEach(function(w){
+    var h='<table class="sheet"><thead><tr><td><div class="sheet-head"><b>'+esc($('title').value)+'</b><span>이름<i class="blank-line"></i> &nbsp; 날짜<i class="blank-line"></i></span></div></td></tr></thead><tbody>';
+    if(!words.length) h+='<tr><td><p class="empty">왼쪽에 글자나 낱말을 적어 주세요.</p></td></tr>';
+    words.forEach(function(w,wi){
       var chars=Array.from(w), groups=Math.max(1,Math.floor(cols/chars.length));
-      h+='<div class="word">';
+      h+='<tr class="wordrow'+(o.pageEach&&wi>0?' newpage':'')+'"><td><div class="word">';
+      var fam="font-family:'"+o.font+"','Malgun Gothic',sans-serif";
+      if(o.caption) h+='<div class="caption" style="'+fam+'"><small>'+(wi+1)+'</small>'+esc(w)+'</div>';
       for(var i=0;i<o.lines;i++){
         h+='<div class="row">';
         for(var g=0;g<groups;g++){
@@ -139,8 +150,9 @@ textarea{min-height:92px;resize:vertical;font-size:18px}
         }
         h+='</div>';
       }
-      h+='</div>';
+      h+='</div></td></tr>';
     });
+    h+='</tbody></table>';
     paper.style.setProperty('--cell',o.size+'mm');
     paper.innerHTML=h;
     fit();
