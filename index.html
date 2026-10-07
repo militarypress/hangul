@@ -51,6 +51,19 @@ textarea{min-height:88px;resize:vertical;font-size:20px}
 .hint{margin:0;font-size:13px;color:var(--fg);background:var(--bg);border-left:4px solid var(--chalk);padding:8px 10px;line-height:1.5}
 .hint b{font-weight:700}
 a{color:var(--accent)}
+.tabs button.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+.packs{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px;margin-top:8px}
+.pack{position:relative;text-align:left;background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:2px;color:var(--fg);min-width:0}
+.pack:hover{border-color:var(--accent)}
+.pack.on{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent)}
+.pack b{font-family:var(--display);font-weight:400;font-size:20px;line-height:1.2;padding-right:22px}
+.pack .em{font-size:18px;letter-spacing:2px;white-space:nowrap;overflow:hidden}
+.pack .ws{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pack .del{position:absolute;top:4px;right:4px;color:var(--muted);font-size:15px;padding:2px 7px;border-radius:6px}
+.pack .del:hover{color:var(--danger);background:rgba(192,57,43,.12)}
+.favbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.favbar input{flex:1;min-width:140px}
+.empty{color:var(--muted);font-size:14px;padding:8px 2px}
 
 /* ---------- 아이 화면 ---------- */
 #play{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg)}
@@ -61,11 +74,23 @@ a{color:var(--accent)}
 .ico{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-size:20px;display:grid;place-items:center}
 #wrap{flex:1;position:relative;min-height:0;touch-action:none}
 #wrap canvas{position:absolute;left:0;top:0;touch-action:none}
+.pic{position:absolute;left:0;right:0;top:0;display:flex;align-items:center;justify-content:center;line-height:1;pointer-events:none;z-index:1}
 .btn{font-family:var(--display);font-size:20px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:14px;padding:12px 18px;min-height:56px}
 .btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-size:24px;padding:12px 28px}
 .swatches{display:flex;gap:8px;align-items:center;margin-right:8px}
 .sw{width:36px;height:36px;border-radius:50%;border:3px solid transparent;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.25)}
 .sw.on{border-color:var(--fg);transform:scale(1.15)}
+/* 퀴즈 */
+#quizBox{flex:1;min-height:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3vh;padding:12px}
+.qpic{font-size:min(26vh,190px);line-height:1}
+.qq{font-family:var(--display);font-size:22px;color:var(--muted)}
+.choices{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;max-width:920px}
+.choice{font-family:var(--display);font-size:38px;padding:14px 34px;min-width:160px;border-radius:18px;border:2px solid var(--line);background:var(--panel);color:var(--fg);transition:transform .15s,background .15s}
+.choice.ok{background:#16a34a;border-color:#16a34a;color:#fff;transform:scale(1.08)}
+.choice.bad{opacity:.35;text-decoration:line-through;animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+@media (max-width:600px){.choice{font-size:28px;padding:12px 22px;min-width:120px}.qpic{font-size:min(22vh,140px)}}
+.toast{position:absolute;left:50%;bottom:calc(92px + env(safe-area-inset-bottom));transform:translateX(-50%);background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:10px 20px;font-family:var(--display);font-size:22px;box-shadow:0 6px 20px rgba(0,0,0,.15);z-index:5;white-space:nowrap}
 
 /* ---------- 오버레이 ---------- */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
@@ -123,17 +148,28 @@ a{color:var(--accent)}
     <div>
       <label for="words">쓸 글자 · 낱말 (띄어쓰기로 구분)</label>
       <textarea id="words">가 나 다 라 마</textarea>
-    </div>
-    <div>
-      <label>골라 넣기</label>
-      <div class="chips" id="presets">
-        <button type="button" data-w="ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ">모음 10자</button>
-        <button type="button" data-w="ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ">자음 14자</button>
-        <button type="button" data-w="가 나 다 라 마 바 사 아 자 차 카 타 파 하">가나다</button>
-        <button type="button" data-w="아이 우유 오이 나무 나비 모자 바지 사자">받침 없는 낱말</button>
-        <button type="button" data-w="책 달 별 산 꽃 집 밥 눈">받침 있는 낱말</button>
+      <div class="favbar">
+        <input type="text" id="favName" placeholder="즐겨찾기 이름 (비우면 자동)">
+        <button type="button" class="ghost" id="favAdd">⭐ 현재 낱말 저장</button>
       </div>
     </div>
+    <div>
+      <label>낱말 묶음 고르기 — 같은 소리로 시작하는 낱말을 그림과 함께 연달아 써요</label>
+      <div class="chips tabs" id="packTabs">
+        <button type="button" data-tab="cons" class="on">자음별</button>
+        <button type="button" data-tab="vow">모음별</button>
+        <button type="button" data-tab="letters">글자만</button>
+        <button type="button" data-tab="fav">⭐ 즐겨찾기</button>
+      </div>
+      <div class="packs" id="packs"></div>
+    </div>
+    <div class="grid2">
+      <div><label for="mode">활동</label>
+        <select id="mode"><option value="trace">따라쓰기</option><option value="quiz">그림 보고 낱말 고르기 (퀴즈)</option><option value="dictate">받아쓰기 (듣고 빈칸에 쓰기)</option></select></div>
+      <div><label for="nch">퀴즈 보기 개수</label>
+        <select id="nch"><option value="2">2개</option><option value="3" selected>3개</option><option value="4">4개</option></select></div>
+    </div>
+    <p class="hint">퀴즈는 그림이 있는 낱말(자음별·모음별 묶음)로만 할 수 있어요. 오답 보기는 지금 고른 낱말들 중에서 나와요.<br>받아쓰기는 낱말을 들려주고 빈칸에 쓰게 해요. 맞히면 그림이 나타나고, 두 번 틀리면 연한 글자가 나와 따라 쓸 수 있어요. "채점 너그럽기"가 합격 기준에도 적용돼요.</p>
     <label class="check" for="perChar"><input type="checkbox" id="perChar"> 낱말을 한 글자씩 따로 연습</label>
     <div class="grid2">
       <div><label for="font">글씨체</label>
@@ -168,13 +204,20 @@ a{color:var(--accent)}
   <div id="wrap">
     <canvas id="base"></canvas>
     <canvas id="ink"></canvas>
+    <div class="pic" id="pic"></div>
   </div>
-  <div class="bar bottom">
+  <div id="quizBox" hidden>
+    <div class="qpic" id="qpic"></div>
+    <div class="qq">이 그림은 무엇일까요?</div>
+    <div class="choices" id="choices"></div>
+  </div>
+  <div class="bar bottom" id="bottomBar">
     <div class="swatches" id="swatches"></div>
     <button type="button" class="btn" id="undoBtn">↩<span class="t"> 한 획</span></button>
     <button type="button" class="btn" id="clearBtn">🧹<span class="t"> 다 지우기</span></button>
     <button type="button" class="btn primary" id="doneBtn">다 썼어요 ✓</button>
   </div>
+  <div id="toast" class="toast" hidden></div>
 </section>
 
 <!-- ============ 보상 오버레이 ============ -->
@@ -226,19 +269,90 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 
 /* ---------- 설정 ---------- */
-var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,reps:2,guide:true,sound:true,voice:true,color:'#2980b9'};
+var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,reps:2,guide:true,sound:true,voice:true,color:'#2980b9',mode:'trace',nch:3};
 var S=loadSettings();
 function loadSettings(){try{var j=localStorage.getItem(LS_KEY);if(j)return Object.assign({},DEFAULTS,JSON.parse(j))}catch(e){}return Object.assign({},DEFAULTS)}
 function saveSettings(){try{localStorage.setItem(LS_KEY,JSON.stringify(S))}catch(e){}}
-function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('reps').value=String(S.reps);$('guide').checked=S.guide;$('sound').checked=S.sound;$('voice').checked=S.voice}
-function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.reps=+$('reps').value;S.guide=$('guide').checked;S.sound=$('sound').checked;S.voice=$('voice').checked;saveSettings()}
+function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('reps').value=String(S.reps);$('guide').checked=S.guide;$('sound').checked=S.sound;$('voice').checked=S.voice;$('mode').value=S.mode;$('nch').value=String(S.nch)}
+function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.reps=+$('reps').value;S.guide=$('guide').checked;S.sound=$('sound').checked;S.voice=$('voice').checked;S.mode=$('mode').value;S.nch=+$('nch').value;saveSettings()}
 fillForm();
-$('presets').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;$('words').value=b.dataset.w});
 $('form').addEventListener('submit',function(e){e.preventDefault()});
+
+/* ---------- 낱말 묶음 (같은 첫소리 + 이모지 그림) ---------- */
+var PACKS_CONS=[
+  {t:'ㄱ',w:[['가방','🎒'],['가위','✂️'],['거미','🕷️'],['고래','🐳'],['고양이','🐱'],['구름','☁️'],['기차','🚆'],['곰','🐻']]},
+  {t:'ㄴ',w:[['나무','🌳'],['나비','🦋'],['너구리','🦝'],['노래','🎵'],['눈','❄️'],['늑대','🐺'],['낙타','🐪'],['농구','🏀']]},
+  {t:'ㄷ',w:[['달','🌙'],['달걀','🥚'],['당근','🥕'],['돼지','🐷'],['도넛','🍩'],['돌고래','🐬'],['다람쥐','🐿️'],['대문','🚪']]},
+  {t:'ㄹ',w:[['라면','🍜'],['라디오','📻'],['레몬','🍋'],['로봇','🤖'],['로켓','🚀'],['리본','🎀']]},
+  {t:'ㅁ',w:[['모자','🧢'],['말','🐴'],['물','💧'],['문','🚪'],['무지개','🌈'],['메뚜기','🦗'],['망치','🔨'],['모기','🦟']]},
+  {t:'ㅂ',w:[['바나나','🍌'],['바다','🌊'],['바지','👖'],['버스','🚌'],['벌','🐝'],['별','⭐'],['병아리','🐥'],['비행기','✈️']]},
+  {t:'ㅅ',w:[['사자','🦁'],['사과','🍎'],['사탕','🍬'],['새','🐦'],['소','🐄'],['수박','🍉'],['시계','⏰'],['신발','👟']]},
+  {t:'ㅇ',w:[['아기','👶'],['오리','🦆'],['우유','🥛'],['안경','👓'],['양','🐑'],['여우','🦊'],['우산','☂️'],['원숭이','🐵']]},
+  {t:'ㅈ',w:[['자동차','🚗'],['자전거','🚲'],['장미','🌹'],['전화','📞'],['집','🏠'],['종','🔔'],['지구','🌍'],['장갑','🧤']]},
+  {t:'ㅊ',w:[['책','📚'],['치즈','🧀'],['치마','👗'],['초','🕯️'],['초콜릿','🍫'],['침대','🛏️'],['체리','🍒'],['춤','💃']]},
+  {t:'ㅋ',w:[['코','👃'],['코끼리','🐘'],['카메라','📷'],['컵','☕'],['케이크','🎂'],['키위','🥝'],['코알라','🐨'],['쿠키','🍪']]},
+  {t:'ㅌ',w:[['토끼','🐰'],['토마토','🍅'],['트럭','🚚'],['탁구','🏓'],['텐트','⛺'],['튤립','🌷'],['태양','☀️'],['티셔츠','👕']]},
+  {t:'ㅍ',w:[['포도','🍇'],['피자','🍕'],['펭귄','🐧'],['풍선','🎈'],['피아노','🎹'],['폭죽','🎆'],['판다','🐼'],['편지','✉️']]},
+  {t:'ㅎ',w:[['하마','🦛'],['호랑이','🐯'],['햄버거','🍔'],['호박','🎃'],['핫도그','🌭'],['하트','❤️'],['해바라기','🌻'],['헬리콥터','🚁']]},
+  {t:'ㄲ ㄸ ㅃ ㅆ (된소리)',w:[['꽃','🌸'],['꿀','🍯'],['딸기','🍓'],['땅콩','🥜'],['떡','🍡'],['빵','🍞'],['쌀','🌾'],['씨앗','🌱']]}
+];
+var PACKS_VOW=[
+  {t:'ㅏ',w:[['사과','🍎'],['바나나','🍌'],['나무','🌳'],['가방','🎒'],['하마','🦛'],['다람쥐','🐿️']]},
+  {t:'ㅓ',w:[['거미','🕷️'],['버스','🚌'],['너구리','🦝'],['벌','🐝'],['어항','🐠'],['전화','📞']]},
+  {t:'ㅗ',w:[['오리','🦆'],['고래','🐳'],['모자','🧢'],['소','🐄'],['토끼','🐰'],['포도','🍇']]},
+  {t:'ㅜ',w:[['우유','🥛'],['구름','☁️'],['수박','🍉'],['우산','☂️'],['부엉이','🦉'],['주스','🧃']]},
+  {t:'ㅡ',w:[['트럭','🚚'],['스키','⛷️'],['크레파스','🖍️'],['드럼','🥁'],['블록','🧱'],['늑대','🐺']]},
+  {t:'ㅣ',w:[['기차','🚆'],['시계','⏰'],['비','🌧️'],['치즈','🧀'],['피자','🍕'],['키위','🥝']]}
+];
+var PACKS_LET=[
+  {t:'모음 10자',w:'ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ'.split(' ').map(function(c){return [c,'']})},
+  {t:'자음 14자',w:'ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ'.split(' ').map(function(c){return [c,'']})},
+  {t:'가나다',w:'가 나 다 라 마 바 사 아 자 차 카 타 파 하'.split(' ').map(function(c){return [c,'']})},
+  {t:'받침 없는 낱말',w:'아이 우유 오이 나무 나비 모자 바지 사자'.split(' ').map(function(c){return [c,'']})},
+  {t:'받침 있는 낱말',w:'책 달 별 산 꽃 집 밥 눈'.split(' ').map(function(c){return [c,'']})}
+];
+/* 낱말 → 이모지 사전 (직접 입력한 낱말도 사전에 있으면 그림이 붙는다) */
+var EMOJI={};
+PACKS_CONS.concat(PACKS_VOW).forEach(function(p){p.w.forEach(function(x){if(x[1]&&!EMOJI[x[0]])EMOJI[x[0]]=x[1]})});
+
+/* ---------- 즐겨찾기 ---------- */
+var FAV_KEY='hangul-favs-v1';
+function loadFavs(){try{var f=JSON.parse(localStorage.getItem(FAV_KEY)||'[]');return Array.isArray(f)?f:[]}catch(e){return []}}
+function saveFavs(f){try{localStorage.setItem(FAV_KEY,JSON.stringify(f))}catch(e){}}
+var curTab='cons',curPack=null,packList=[];
+function renderPacks(){
+  var el=$('packs');
+  if(curTab==='cons')packList=PACKS_CONS;
+  else if(curTab==='vow')packList=PACKS_VOW;
+  else if(curTab==='letters')packList=PACKS_LET;
+  else packList=loadFavs().map(function(f,i){return {t:f.name,fav:i,w:f.words.split(/\s+/).filter(Boolean).map(function(x){return [x,EMOJI[x]||'']})}});
+  if(!packList.length){el.innerHTML='<div class="empty">저장된 즐겨찾기가 없어요. 위에 낱말을 적고 "⭐ 현재 낱말 저장"을 누르세요.</div>';return}
+  el.innerHTML=packList.map(function(p,i){
+    var ems=p.w.map(function(x){return x[1]}).join(''),ws=p.w.map(function(x){return x[0]}).join(' ');
+    return '<button type="button" class="pack'+(curPack===p.t?' on':'')+'" data-i="'+i+'">'+
+      (p.fav!==undefined?'<span class="del" data-del="'+p.fav+'" title="삭제">✕</span>':'')+
+      '<b>'+esc(p.t)+'</b>'+(ems?'<span class="em">'+ems+'</span>':'')+'<span class="ws">'+esc(ws)+'</span></button>'}).join('');
+}
+$('packs').addEventListener('click',function(e){
+  var d=e.target.closest('.del');
+  if(d){var favs=loadFavs(),k=+d.dataset.del;if(favs[k]&&confirm('"'+favs[k].name+'" 즐겨찾기를 지울까요?')){favs.splice(k,1);saveFavs(favs);renderPacks()}return}
+  var b=e.target.closest('.pack');if(!b)return;
+  var p=packList[+b.dataset.i];if(!p)return;
+  $('words').value=p.w.map(function(x){return x[0]}).join(' ');curPack=p.t;renderPacks();
+});
+$('packTabs').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;curTab=b.dataset.tab;
+  Array.prototype.forEach.call($('packTabs').children,function(x){x.classList.toggle('on',x===b)});renderPacks()});
+$('favAdd').onclick=function(){var words=$('words').value.trim(),name=$('favName').value.trim();
+  if(!words){alert('먼저 낱말을 적어 주세요.');return}
+  if(!name){var ws=words.split(/\s+/);name=ws.slice(0,3).join(' ')+(ws.length>3?' …':'')}
+  var favs=loadFavs();favs.unshift({name:name,words:words});saveFavs(favs);$('favName').value='';
+  curTab='fav';Array.prototype.forEach.call($('packTabs').children,function(x){x.classList.toggle('on',x.dataset.tab==='fav')});curPack=name;renderPacks()};
+$('words').addEventListener('input',function(){if(curPack){curPack=null;renderPacks()}});
+renderPacks();
 
 /* ---------- 화면 전환 ---------- */
 function show(id){['parent','play','summary'].forEach(function(s){$(s).hidden=(s!==id)})}
-function buildItems(){var ws=S.words.split(/[\s,]+/).filter(Boolean);if(S.perChar){var out=[];ws.forEach(function(w){Array.from(w).forEach(function(c){out.push(c)})});return out}return ws}
+function buildItems(){var ws=S.words.split(/[\s,]+/).filter(Boolean);if(S.perChar){var out=[];ws.forEach(function(w){Array.from(w).forEach(function(c){out.push({w:c,e:''})})});return out}return ws.map(function(w){return {w:w,e:EMOJI[w]||''}})}
 
 /* ---------- 상태 ---------- */
 var items=[],idx=0,rep=0,results=[],strokes=[],cur=null,activeId=null,geom=null;
@@ -256,19 +370,24 @@ setColor(S.color);
 /* ---------- 레이아웃 & 그리기 ---------- */
 function fontStr(px){return 'bold '+px+'px "'+S.font+'","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif'}
 function layout(){
+  if(S.mode==='quiz')return;
   var r=wrap.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
   var W=Math.max(1,Math.floor(r.width)),H=Math.max(1,Math.floor(r.height));
   [base,ink].forEach(function(c){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);c.style.width=W+'px';c.style.height=H+'px'});
-  var chars=Array.from(items[idx]||''),n=Math.max(1,chars.length),gap=10;
+  var it=items[idx]||{w:'',e:''},chars=Array.from(it.w),n=Math.max(1,chars.length),gap=10;
+  /* 그림(이모지)이 있으면 위쪽에 자리를 비워 둔다 */
+  var picH=(it.e&&S.mode!=='dictate')?Math.round(Math.min(120,H*0.22)):0;
+  var pic=$('pic');pic.textContent=it.e||'';pic.style.height=picH+'px';pic.style.fontSize=picH?Math.round(picH*0.74)+'px':'0';
+  var Hc=H-picH;
   /* 칸이 가장 커지는 줄 수를 고른다 — 폰 세로화면에서 두세 글자 낱말은 2줄로 쌓인다 */
   var best=null;
   for(var rows=1;rows<=n;rows++){
     var cols=Math.ceil(n/rows);
-    var c=Math.floor(Math.min((H*0.94-gap*(rows-1))/rows,(W*0.96-gap*(cols-1))/cols));
+    var c=Math.floor(Math.min((Hc*0.94-gap*(rows-1))/rows,(W*0.96-gap*(cols-1))/cols));
     if(!best||c>best.cell)best={rows:rows,cols:cols,cell:c};
   }
   var cell=best.cell,rows=best.rows,cols=best.cols;
-  var y0=(H-(cell*rows+gap*(rows-1)))/2,cells=[];
+  var y0=picH+(Hc-(cell*rows+gap*(rows-1)))/2,cells=[];
   for(var i=0;i<n;i++){
     var rr=Math.floor(i/cols),cc=i%cols,inRow=Math.min(cols,n-rr*cols);
     var rx0=(W-(cell*inRow+gap*(inRow-1)))/2;
@@ -296,6 +415,7 @@ function drawBase(){
     if(S.guide){bctx.save();bctx.strokeStyle='#d9d9d9';bctx.lineWidth=1.5;bctx.setLineDash([6,6]);bctx.beginPath();
       bctx.moveTo(k.x+cell/2,k.y+4);bctx.lineTo(k.x+cell/2,k.y+cell-4);bctx.moveTo(k.x+4,k.y+cell/2);bctx.lineTo(k.x+cell-4,k.y+cell/2);bctx.stroke();bctx.restore()}
   });bctx.restore();
+  if(S.mode==='dictate'&&!dictHint)return; /* 받아쓰기: 힌트 전엔 빈칸 */
   if(S.style==='outline')drawGlyphs(bctx,dpr,{stroke:'#8a8a8a',lineWidth:Math.max(2,cell*0.012),dash:[cell*0.03,cell*0.03]});
   else drawGlyphs(bctx,dpr,{fill:'#cfcfcf'});
 }
@@ -330,18 +450,46 @@ ink.addEventListener('contextmenu',function(e){e.preventDefault()});
 $('undoBtn').onclick=function(){strokes.pop();cur=null;activeId=null;redrawInk()};
 $('clearBtn').onclick=function(){strokes=[];cur=null;activeId=null;redrawInk()};
 
+/* ---------- 받아쓰기용 획 정렬: 칸마다 아이가 쓴 획 묶음의 테두리를 정답 글자 테두리에 맞춘다 ---------- */
+function glyphBoxes(){
+  var cell=geom.cell,c=document.createElement('canvas').getContext('2d');
+  c.font=fontStr(cell*0.74);c.textAlign='center';c.textBaseline='middle';
+  return geom.cells.map(function(k){var cx=k.x+cell/2,cy=k.y+cell/2+cell*0.03,m=c.measureText(k.c);
+    var l=cx-(m.actualBoundingBoxLeft||cell*0.3),r=cx+(m.actualBoundingBoxRight||cell*0.3);
+    var t=cy-(m.actualBoundingBoxAscent||cell*0.35),b=cy+(m.actualBoundingBoxDescent||cell*0.35);
+    return {x:l,y:t,w:Math.max(r-l,1),h:Math.max(b-t,1)}});
+}
+function alignStrokes(list){
+  var cell=geom.cell,x0=geom.x0,y0=geom.y0,boxes=glyphBoxes();
+  var groups=geom.cells.map(function(){return []});
+  list.forEach(function(st){if(!st.length)return;var sx=0,sy=0;st.forEach(function(p){sx+=p.u;sy+=p.v});
+    var mx=x0+sx/st.length*cell,my=y0+sy/st.length*cell,best=0,bd=Infinity;
+    geom.cells.forEach(function(k,i){var dx=Math.max(k.x-mx,0,mx-(k.x+cell)),dy=Math.max(k.y-my,0,my-(k.y+cell)),d=dx*dx+dy*dy;if(d<bd){bd=d;best=i}});
+    groups[best].push(st)});
+  var out=[];
+  groups.forEach(function(g,i){if(!g.length)return;
+    var minx=Infinity,miny=Infinity,maxx=-Infinity,maxy=-Infinity;
+    g.forEach(function(st){st.forEach(function(p){var px=x0+p.u*cell,py=y0+p.v*cell;if(px<minx)minx=px;if(px>maxx)maxx=px;if(py<miny)miny=py;if(py>maxy)maxy=py})});
+    var sw=Math.max(maxx-minx,cell*0.05),sh=Math.max(maxy-miny,cell*0.05),b=boxes[i];
+    var sc=Math.max(0.5,Math.min(Math.min(b.w/sw,b.h/sh),2.5)); /* 과도한 변형 방지 */
+    var ox=b.x+b.w/2-(minx+sw/2)*sc,oy=b.y+b.h/2-(miny+sh/2)*sc;
+    g.forEach(function(st){out.push(st.map(function(p){var px=x0+p.u*cell,py=y0+p.v*cell;return {u:(px*sc+ox-x0)/cell,v:(py*sc+oy-y0)/cell,p:p.p}}))})});
+  return out;
+}
+
 /* ---------- 채점 ----------
    coverage : 글자 영역 중 (조금 넓힌) 획이 덮은 비율  — "글자를 다 따라 그렸나"
    precision: 획 픽셀 중 (조금 넓힌) 글자 안에 있는 비율 — "글자 밖으로 안 삐졌나" */
 function tolerance(){return geom.cell*({easy:0.13,normal:0.09,hard:0.055}[S.level]||0.09)}
-function evaluate(){
+function evaluate(opts){
+  var list=(opts&&opts.align)?alignStrokes(strokes):strokes;
   var es=Math.min(1,900/geom.W),W=Math.round(geom.W*es),H=Math.round(geom.H*es);
   function mk(){var c=document.createElement('canvas');c.width=W;c.height=H;return c.getContext('2d')}
   var tol=tolerance(),gX=mk(),nX=mk(),uX=mk(),dX=mk();
   drawGlyphs(gX,es,{fill:'#000'});
   drawGlyphs(nX,es,{fill:'#000',stroke:'#000',lineWidth:tol*2});
-  renderStrokes(uX,es,strokes,brushW(),'#000');
-  renderStrokes(dX,es,strokes,brushW()+tol*2,'#000');
+  renderStrokes(uX,es,list,brushW(),'#000');
+  renderStrokes(dX,es,list,brushW()+tol*2,'#000');
   var g=gX.getImageData(0,0,W,H).data,n=nX.getImageData(0,0,W,H).data,u=uX.getImageData(0,0,W,H).data,d=dX.getImageData(0,0,W,H).data;
   var gp=0,cov=0,up=0,ins=0;
   for(var i=3;i<g.length;i+=4){var G=g[i]>100,N=n[i]>100,U=u[i]>60,D=d[i]>60;
@@ -354,10 +502,10 @@ function evaluate(){
 /* ---------- 보상 ---------- */
 /* 잘 쓴 정도 → 동물 (점수 숫자는 아이에게 보여주지 않음) */
 var TIERS=[
-  {min:85,stars:3,animal:'🐧',name:'펭귄',msgs:['펭귄이 왔어요! 최고야!','펭귄! 완벽해요!','펭귄이 깜짝 놀랐어요! 정말 대단해!']},
-  {min:68,stars:2,animal:'🐰',name:'토끼',msgs:['토끼가 왔어요! 참 잘했어요!','토끼! 멋져요!','토끼가 좋아해요! 아주 잘했어요!']},
-  {min:48,stars:1,animal:'🐥',name:'병아리',msgs:['병아리가 왔어요! 잘했어요!','병아리! 점점 잘하고 있어요!']},
-  {min:22,stars:0,animal:'🐢',name:'거북이',msgs:['거북이가 응원해요! 조금만 더!','거북이! 천천히 한 번 더 해볼까?']},
+  {min:85,stars:3,animal:'🐧',name:'펭귄',msgs:['참 잘했어요!','정말 잘했어요!','최고예요!','아주 멋져요!','완벽해요!']},
+  {min:68,stars:2,animal:'🐰',name:'토끼',msgs:['잘했어요!','참 잘했어요!','멋져요!','아주 좋아요!']},
+  {min:48,stars:1,animal:'🐥',name:'병아리',msgs:['잘했어요!','좋아요!','점점 좋아지고 있어요!']},
+  {min:22,stars:0,animal:'🐢',name:'거북이',msgs:['조금만 더 해볼까요?','거의 다 왔어요!','한 번 더 해볼까요?']},
   {min:0,stars:0,animal:'🥚',name:'알',msgs:['글자를 따라 그려 보세요','천천히 다시 해봐요']}
 ];
 function showReward(r){
@@ -369,15 +517,18 @@ function showReward(r){
   $('rwAnimal').textContent=animal;$('rwMsg').textContent=msg;
   var st=$('rwStars').children;
   for(var k=0;k<3;k++){st[k].classList.remove('on');void st[k].offsetWidth;if(k<tier.stars){st[k].style.animationDelay=(0.45+k*0.25)+'s';st[k].classList.add('on')}}
-  var moreReps=rep<S.reps-1,moreItems=idx<items.length-1;
+  var moreReps=rep<repsN()-1,moreItems=idx<items.length-1;
   $('rwNext').textContent=moreReps?'한 번 더 →':(moreItems?'다음 글자 →':'결과 보기');
   $('reward').hidden=false;jingle(tier.stars);
   if(tier.stars===3)confetti(200);else if(tier.stars===2)confetti(70);
-  setTimeout(function(){speak(msg,{pitch:tier.stars>0?1.45:1.2,rate:0.95})},tier.stars>0?550:200);
+  setTimeout(function(){speak(msg,{rate:0.95})},tier.stars>0?550:200);
 }
-$('doneBtn').onclick=function(){initAudio();showReward(evaluate())};
+$('doneBtn').onclick=function(){initAudio();
+  if(S.mode==='dictate'){var r=evaluate({align:true}),pass={easy:40,normal:50,hard:62}[S.level]||50;
+    if(!r.empty&&r.score>=pass)dictSuccess(r);else dictFail(r);return}
+  showReward(evaluate())};
 $('rwRetry').onclick=function(){$('reward').hidden=true;strokes=[];redrawInk()};
-$('rwNext').onclick=function(){$('reward').hidden=true;if(rep<S.reps-1){rep++;loadItem()}else if(idx<items.length-1){idx++;rep=0;loadItem()}else showSummary()};
+$('rwNext').onclick=function(){clearTimeout(autoT);$('reward').hidden=true;if(rep<repsN()-1){rep++;loadItem()}else if(idx<items.length-1){idx++;rep=0;loadItem()}else showSummary()};
 
 /* ---------- 폭죽 ---------- */
 var fx=$('fx'),fctx=fx.getContext('2d'),parts=[],fxRun=false;
@@ -416,10 +567,10 @@ function speak(text,opt){
   opt=opt||{};
   try{speechSynthesis.cancel()}catch(e){}
   setTimeout(function(){try{
-    var u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=opt.rate||0.95;u.pitch=opt.pitch||1.3;u.volume=1;
+    var u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=opt.rate||0.95;u.pitch=opt.pitch||1.0;u.volume=1;
     var v=koVoice();if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}},80);
 }
-$('sayBtn').onclick=function(){if(items.length)speak(items[idx],{pitch:1.25,rate:0.85})};
+$('sayBtn').onclick=function(){if(items.length)speak(items[idx].w,{rate:0.85})};
 
 /* ---------- 잠금 보조: 자동 전체화면 + 뒤로가기 가로채기 ----------
    홈 버튼·앱 전환은 웹에서 막을 수 없다 → 안드로이드 '앱 고정'을 함께 사용 */
@@ -443,32 +594,99 @@ $('gateOk').onclick=function(){if(+$('gateA').value===+$('gate').dataset.ans){$(
 $('gateA').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('gateOk').click()}});
 $('gateCancel').onclick=function(){$('gate').hidden=true;gateCb=null};
 
+/* ---------- 퀴즈 모드 ---------- */
+function repsN(){return S.mode==='quiz'?1:S.reps}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
+function setMode(){var q=S.mode==='quiz';$('wrap').hidden=q;$('bottomBar').hidden=q;$('quizBox').hidden=!q;$('sayBtn').hidden=q;$('rwRetry').hidden=q}
+var tries=0,autoT=null;
+function loadQuiz(){
+  var it=items[idx];tries=0;
+  $('prog').textContent=(idx+1)+' / '+items.length;
+  $('qpic').textContent=it.e;
+  /* 오답 보기: 지금 연습 중인 낱말들에서 먼저, 모자라면 전체 사전에서 */
+  var pool=shuffle(items.filter(function(x){return x.w!==it.w}).map(function(x){return x.w}));
+  var extra=shuffle(Object.keys(EMOJI).filter(function(w){return w!==it.w&&pool.indexOf(w)<0}));
+  var n=Math.max(2,Math.min(4,S.nch||3)),opts=pool.slice(0,n-1);
+  while(opts.length<n-1&&extra.length)opts.push(extra.shift());
+  opts.push(it.w);shuffle(opts);
+  $('choices').innerHTML=opts.map(function(w){return '<button type="button" class="choice" data-w="'+esc(w)+'">'+esc(w)+'</button>'}).join('');
+  speak('이 그림은 무엇일까요?',{rate:0.95});
+}
+$('choices').addEventListener('click',function(e){
+  var b=e.target.closest('.choice');if(!b||b.disabled)return;
+  var it=items[idx];tries++;initAudio();
+  if(b.dataset.w!==it.w){
+    b.classList.add('bad');b.disabled=true;tone(220,0,0.25,0.12,'triangle');
+    speak('다시 골라볼까요?',{rate:0.95});return;
+  }
+  b.classList.add('ok');Array.prototype.forEach.call($('choices').children,function(x){x.disabled=true});
+  var stars=tries===1?3:(tries===2?2:1),tier=TIERS.filter(function(t){return t.stars===stars})[0];
+  results[idx]=[{score:0,stars:stars,animal:tier.animal}];
+  $('rwAnimal').textContent=tier.animal;$('rwMsg').textContent='맞아요! '+it.w+'!';
+  var st=$('rwStars').children;
+  for(var k=0;k<3;k++){st[k].classList.remove('on');void st[k].offsetWidth;if(k<stars){st[k].style.animationDelay=(0.45+k*0.25)+'s';st[k].classList.add('on')}}
+  $('rwNext').textContent=idx<items.length-1?'다음 문제 →':'결과 보기';
+  $('reward').hidden=false;jingle(stars);
+  if(stars===3)confetti(200);else if(stars===2)confetti(70);
+  setTimeout(function(){speak('맞아요! '+it.w+'! '+pick(tier.msgs),{rate:0.95})},500);
+  clearTimeout(autoT);autoT=setTimeout(function(){if(!$('reward').hidden)$('rwNext').click()},2600);
+});
+
+/* ---------- 받아쓰기 모드 ---------- */
+var dictFails=0,dictHint=false,toastT=null;
+function toast(msg){var t=$('toast');t.textContent=msg;t.hidden=false;clearTimeout(toastT);toastT=setTimeout(function(){t.hidden=true},1900)}
+function dictSuccess(r){
+  var it=items[idx],stars=r.score>=75?3:(r.score>=60?2:1),tier=TIERS.filter(function(t){return t.stars===stars})[0];
+  if(!results[idx])results[idx]=[];results[idx][rep]={score:r.score,stars:stars,animal:tier.animal};
+  $('rwAnimal').textContent=it.e||tier.animal;$('rwMsg').textContent='맞아요! '+it.w+'!';
+  var st=$('rwStars').children;
+  for(var k=0;k<3;k++){st[k].classList.remove('on');void st[k].offsetWidth;if(k<stars){st[k].style.animationDelay=(0.45+k*0.25)+'s';st[k].classList.add('on')}}
+  var moreReps=rep<repsN()-1,moreItems=idx<items.length-1;
+  $('rwNext').textContent=moreReps?'한 번 더 →':(moreItems?'다음 낱말 →':'결과 보기');
+  $('reward').hidden=false;jingle(stars);if(stars===3)confetti(200);else if(stars===2)confetti(70);
+  setTimeout(function(){speak('맞아요! '+it.w+'! '+pick(tier.msgs),{rate:0.95})},500);
+}
+function dictFail(r){
+  dictFails++;tone(220,0,0.25,0.12,'triangle');
+  var msg=r.empty?'글자를 써 보세요':(dictFails>=2?'연한 글자를 따라 써 볼까요?':'음… 다시 한 번 써 볼까요?');
+  toast(msg);speak(r.empty?'글자를 써 보세요':(dictFails>=2?'연한 글자를 따라 써 볼까요?':'다시 한 번 써 볼까요?'),{rate:0.95});
+  if(!r.empty)strokes=[];
+  if(dictFails>=2&&!dictHint){dictHint=true;drawBase()}
+  redrawInk();
+  setTimeout(function(){if(!$('play').hidden&&$('reward').hidden)speak(items[idx].w,{rate:0.85})},2300);
+}
+
 /* ---------- 흐름 ---------- */
-function startPlay(){readForm();items=buildItems();if(!items.length){alert('쓸 글자를 적어 주세요.');return}
-  idx=0;rep=0;results=[];show('play');wake();enterKiosk();
+function startPlay(){readForm();items=buildItems();
+  if(S.mode==='quiz'){items=items.filter(function(i){return i.e});
+    if(items.length<2){alert('퀴즈는 그림이 있는 낱말이 2개 이상 필요해요. 자음별·모음별 묶음을 골라 주세요.');return}}
+  else if(!items.length){alert('쓸 글자를 적어 주세요.');return}
+  idx=0;rep=0;results=[];show('play');wake();enterKiosk();setMode();
   var p=document.fonts&&document.fonts.load?document.fonts.load(fontStr(40)):Promise.resolve();
   p.catch(function(){}).then(function(){loadItem()});
 }
 function loadItem(){strokes=[];cur=null;activeId=null;
-  $('prog').textContent=(idx+1)+' / '+items.length+(S.reps>1?'  ·  '+(rep+1)+'번째':'');
+  if(S.mode==='quiz'){loadQuiz();return}
+  dictFails=0;dictHint=false;
+  $('prog').textContent=(idx+1)+' / '+items.length+(repsN()>1?'  ·  '+(rep+1)+'번째':'');
   layout();
-  var w=items[idx];speak(rep===0?w+', 써 보세요':'한 번 더, '+w,{pitch:1.25,rate:0.9});
+  var w=items[idx].w;speak(rep===0?w+', 써 보세요':'한 번 더, '+w,{rate:0.9});
 }
 function showSummary(){show('summary');releaseWake();exitKiosk();
   var all=[];results.forEach(function(rs){(rs||[]).forEach(function(r){if(r)all.push(r)})});
-  var total=all.reduce(function(a,r){return a+r.stars},0),max=items.length*S.reps*3;
+  var total=all.reduce(function(a,r){return a+r.stars},0),max=items.length*repsN()*3;
   $('sumTotal').textContent='⭐ '+total+' / '+max;
-  $('sumList').innerHTML=items.map(function(w,i){var rs=results[i]||[],cells='';
-    for(var k=0;k<S.reps;k++){var r=rs[k];cells+='<span class="rep">'+(r?r.animal+' '+'★'.repeat(r.stars)+'☆'.repeat(3-r.stars):'·')+'</span>'}
-    return '<li><span class="w">'+esc(w)+'</span><span class="reps">'+cells+'</span></li>'}).join('');
+  $('sumList').innerHTML=items.map(function(it,i){var rs=results[i]||[],cells='';
+    for(var k=0;k<repsN();k++){var r=rs[k];cells+='<span class="rep">'+(r?r.animal+' '+'★'.repeat(r.stars)+'☆'.repeat(3-r.stars):'·')+'</span>'}
+    return '<li><span class="w">'+(it.e?it.e+' ':'')+esc(it.w)+'</span><span class="reps">'+cells+'</span></li>'}).join('');
   $('parade').textContent=all.filter(function(r){return r.stars>0}).map(function(r){return r.animal}).join(' ')||'🥚';
   var good=total>=max*0.6;jingle(good?3:1);if(good)confetti(220);
-  speak(good?'오늘 정말 잘했어요! 동물 친구들이 모두 기뻐해요!':'오늘도 수고했어요! 다음에 또 해봐요!',{pitch:1.4,rate:0.95});
+  speak(good?'오늘 정말 잘했어요!':'오늘도 수고했어요!',{rate:0.95});
 }
 $('startBtn').onclick=startPlay;
 $('gearBtn').onclick=function(){gate(function(){exitKiosk();releaseWake();show('parent')})};
 $('toParentBtn').onclick=function(){gate(function(){show('parent')})};
-$('againBtn').onclick=function(){idx=0;rep=0;results=[];show('play');wake();enterKiosk();loadItem()};
+$('againBtn').onclick=function(){idx=0;rep=0;results=[];show('play');wake();enterKiosk();setMode();loadItem()};
 
 /* ---------- 전체화면 · 화면 켜짐 유지 ---------- */
 $('fsBtn').onclick=function(){if(!document.fullscreenElement)goFullscreen();else if(document.exitFullscreen)document.exitFullscreen()};
