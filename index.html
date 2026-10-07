@@ -64,6 +64,21 @@ a{color:var(--accent)}
 .favbar{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
 .favbar input{flex:1;min-width:140px}
 .empty{color:var(--muted);font-size:14px;padding:8px 2px}
+.acts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.act{font-family:var(--display);font-size:18px;padding:14px 6px;border-radius:12px;border:1px solid var(--line);background:var(--bg);color:var(--fg)}
+.act.on{background:var(--accent);color:var(--accent-fg);border-color:var(--accent)}
+@media (max-width:480px){.act{font-size:16px;padding:12px 4px}}
+.qbox{text-align:left;max-width:720px;width:100%;max-height:92vh;overflow:auto}
+.qsec{margin-top:12px}
+.qlabel{font-size:13px;color:var(--muted)}
+.qgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:6px;margin-top:6px}
+.qp{border:1px solid var(--line);border-radius:10px;padding:6px 8px;background:var(--bg);color:var(--fg);text-align:left;display:flex;flex-direction:column;gap:2px;min-width:0}
+.qp b{font-family:var(--display);font-weight:400;font-size:18px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.qp span{font-size:15px;white-space:nowrap;overflow:hidden}
+.qp.on{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent);background:var(--panel)}
+.qopts{display:flex;gap:18px;margin:14px 0 10px;flex-wrap:wrap;align-items:center}
+.qopts label{display:flex;gap:6px;align-items:center;font-size:14px;color:var(--fg);margin:0}
+.qopts select{width:auto}
 
 /* ---------- 아이 화면 ---------- */
 #play{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg)}
@@ -146,6 +161,15 @@ a{color:var(--accent)}
 
   <form class="card" id="form">
     <div>
+      <label>활동</label>
+      <div class="acts" id="acts">
+        <button type="button" class="act on" data-act="trace">✏️ 따라쓰기</button>
+        <button type="button" class="act" data-act="dictate">🎧 받아쓰기</button>
+        <button type="button" class="act" data-act="quiz">🧩 그림 퀴즈</button>
+      </div>
+      <p class="lead" id="actHint" style="margin-top:6px"></p>
+    </div>
+    <div>
       <label for="words">쓸 글자 · 낱말 (띄어쓰기로 구분)</label>
       <textarea id="words">가 나 다 라 마</textarea>
       <div class="favbar">
@@ -163,14 +187,7 @@ a{color:var(--accent)}
       </div>
       <div class="packs" id="packs"></div>
     </div>
-    <div class="grid2">
-      <div><label for="mode">활동</label>
-        <select id="mode"><option value="trace">따라쓰기</option><option value="quiz">그림 보고 낱말 고르기 (퀴즈)</option><option value="dictate">받아쓰기 (듣고 빈칸에 쓰기)</option></select></div>
-      <div><label for="nch">퀴즈 보기 개수</label>
-        <select id="nch"><option value="2">2개</option><option value="3" selected>3개</option><option value="4">4개</option></select></div>
-    </div>
-    <p class="hint">퀴즈는 그림이 있는 낱말(자음별·모음별 묶음)로만 할 수 있어요. 오답 보기는 지금 고른 낱말들 중에서 나와요.<br>받아쓰기는 낱말을 들려주고 빈칸에 쓰게 해요. 맞히면 그림이 나타나고, 두 번 틀리면 연한 글자가 나와 따라 쓸 수 있어요. "채점 너그럽기"가 합격 기준에도 적용돼요.</p>
-    <label class="check" for="perChar"><input type="checkbox" id="perChar"> 낱말을 한 글자씩 따로 연습</label>
+    <label class="check" for="perChar"><input type="checkbox" id="perChar"> 낱말을 한 글자씩 쪼개서 연습 (예: 가방 → '가', '방'을 한 화면씩)</label>
     <div class="grid2">
       <div><label for="font">글씨체</label>
         <select id="font"><option value="Jua">주아 (둥글고 굵게 · 추천)</option><option value="Gowun Dodum">고운돋움</option><option value="sans-serif">기기 기본 글꼴</option></select></div>
@@ -233,6 +250,22 @@ a{color:var(--accent)}
   </div>
 </div>
 
+<!-- ============ 퀴즈 묶음 고르기 ============ -->
+<div id="quizPick" class="overlay" hidden>
+  <div class="box qbox">
+    <h2>🧩 그림 퀴즈</h2>
+    <p class="lead">그림을 보고 맞는 낱말을 고르는 놀이예요. 어떤 낱말로 할까요? 여러 개 골라도 돼요.</p>
+    <div class="qsec"><div class="qlabel">자음별</div><div class="qgrid" id="qCons"></div></div>
+    <div class="qsec"><div class="qlabel">모음별</div><div class="qgrid" id="qVow"></div></div>
+    <div class="qsec" id="qFavSec" hidden><div class="qlabel">⭐ 즐겨찾기 (그림 있는 낱말만)</div><div class="qgrid" id="qFav"></div></div>
+    <div class="qopts">
+      <label>보기 <select id="nch"><option value="2">2개</option><option value="3" selected>3개</option><option value="4">4개</option></select></label>
+      <label>문제 수 <select id="qcount"><option value="10" selected>10개</option><option value="20">20개</option><option value="0">전체</option></select></label>
+    </div>
+    <div class="row"><button type="button" class="btn" id="qCancel">취소</button><button type="button" class="btn primary" id="qStart">▶ 퀴즈 시작</button></div>
+  </div>
+</div>
+
 <!-- ============ 부모 확인 (더하기 문제) ============ -->
 <div id="gate" class="overlay" hidden>
   <div class="box">
@@ -269,12 +302,12 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 
 /* ---------- 설정 ---------- */
-var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,reps:2,guide:true,sound:true,voice:true,color:'#2980b9',mode:'trace',nch:3};
+var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,reps:2,guide:true,sound:true,voice:true,color:'#2980b9',mode:'trace',nch:3,qcount:10,quizSel:[]};
 var S=loadSettings();
 function loadSettings(){try{var j=localStorage.getItem(LS_KEY);if(j)return Object.assign({},DEFAULTS,JSON.parse(j))}catch(e){}return Object.assign({},DEFAULTS)}
 function saveSettings(){try{localStorage.setItem(LS_KEY,JSON.stringify(S))}catch(e){}}
-function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('reps').value=String(S.reps);$('guide').checked=S.guide;$('sound').checked=S.sound;$('voice').checked=S.voice;$('mode').value=S.mode;$('nch').value=String(S.nch)}
-function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.reps=+$('reps').value;S.guide=$('guide').checked;S.sound=$('sound').checked;S.voice=$('voice').checked;S.mode=$('mode').value;S.nch=+$('nch').value;saveSettings()}
+function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('reps').value=String(S.reps);$('guide').checked=S.guide;$('sound').checked=S.sound;$('voice').checked=S.voice;setAct(S.mode==='dictate'?'dictate':'trace')}
+function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.reps=+$('reps').value;S.guide=$('guide').checked;S.sound=$('sound').checked;S.voice=$('voice').checked;saveSettings()}
 fillForm();
 $('form').addEventListener('submit',function(e){e.preventDefault()});
 
@@ -352,10 +385,10 @@ renderPacks();
 
 /* ---------- 화면 전환 ---------- */
 function show(id){['parent','play','summary'].forEach(function(s){$(s).hidden=(s!==id)})}
-function buildItems(){var ws=S.words.split(/[\s,]+/).filter(Boolean);if(S.perChar){var out=[];ws.forEach(function(w){Array.from(w).forEach(function(c){out.push({w:c,e:''})})});return out}return ws.map(function(w){return {w:w,e:EMOJI[w]||''}})}
+function buildItems(){var ws=S.words.split(/[\s,]+/).filter(Boolean);if(S.perChar){var out=[];ws.forEach(function(w){Array.from(w).forEach(function(c){out.push({w:c,e:EMOJI[w]||''})})});return out}return ws.map(function(w){return {w:w,e:EMOJI[w]||''}})}
 
 /* ---------- 상태 ---------- */
-var items=[],idx=0,rep=0,results=[],strokes=[],cur=null,activeId=null,geom=null;
+var items=[],idx=0,rep=0,results=[],strokes=[],cur=null,activeId=null,geom=null,runMode='trace';
 var base=$('base'),ink=$('ink'),wrap=$('wrap');
 var bctx=base.getContext('2d'),ictx=ink.getContext('2d');
 
@@ -370,13 +403,13 @@ setColor(S.color);
 /* ---------- 레이아웃 & 그리기 ---------- */
 function fontStr(px){return 'bold '+px+'px "'+S.font+'","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif'}
 function layout(){
-  if(S.mode==='quiz')return;
+  if(runMode==='quiz')return;
   var r=wrap.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
   var W=Math.max(1,Math.floor(r.width)),H=Math.max(1,Math.floor(r.height));
   [base,ink].forEach(function(c){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);c.style.width=W+'px';c.style.height=H+'px'});
   var it=items[idx]||{w:'',e:''},chars=Array.from(it.w),n=Math.max(1,chars.length),gap=10;
   /* 그림(이모지)이 있으면 위쪽에 자리를 비워 둔다 */
-  var picH=(it.e&&S.mode!=='dictate')?Math.round(Math.min(120,H*0.22)):0;
+  var picH=(it.e&&runMode!=='dictate')?Math.round(Math.min(120,H*0.22)):0;
   var pic=$('pic');pic.textContent=it.e||'';pic.style.height=picH+'px';pic.style.fontSize=picH?Math.round(picH*0.74)+'px':'0';
   var Hc=H-picH;
   /* 칸이 가장 커지는 줄 수를 고른다 — 폰 세로화면에서 두세 글자 낱말은 2줄로 쌓인다 */
@@ -415,7 +448,7 @@ function drawBase(){
     if(S.guide){bctx.save();bctx.strokeStyle='#d9d9d9';bctx.lineWidth=1.5;bctx.setLineDash([6,6]);bctx.beginPath();
       bctx.moveTo(k.x+cell/2,k.y+4);bctx.lineTo(k.x+cell/2,k.y+cell-4);bctx.moveTo(k.x+4,k.y+cell/2);bctx.lineTo(k.x+cell-4,k.y+cell/2);bctx.stroke();bctx.restore()}
   });bctx.restore();
-  if(S.mode==='dictate'&&!dictHint)return; /* 받아쓰기: 힌트 전엔 빈칸 */
+  if(runMode==='dictate'&&!dictHint)return; /* 받아쓰기: 힌트 전엔 빈칸 */
   if(S.style==='outline')drawGlyphs(bctx,dpr,{stroke:'#8a8a8a',lineWidth:Math.max(2,cell*0.012),dash:[cell*0.03,cell*0.03]});
   else drawGlyphs(bctx,dpr,{fill:'#cfcfcf'});
 }
@@ -524,7 +557,7 @@ function showReward(r){
   setTimeout(function(){speak(msg,{rate:0.95})},tier.stars>0?550:200);
 }
 $('doneBtn').onclick=function(){initAudio();
-  if(S.mode==='dictate'){var r=evaluate({align:true}),pass={easy:40,normal:50,hard:62}[S.level]||50;
+  if(runMode==='dictate'){var r=evaluate({align:true}),pass={easy:40,normal:50,hard:62}[S.level]||50;
     if(!r.empty&&r.score>=pass)dictSuccess(r);else dictFail(r);return}
   showReward(evaluate())};
 $('rwRetry').onclick=function(){$('reward').hidden=true;strokes=[];redrawInk()};
@@ -595,9 +628,9 @@ $('gateA').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventD
 $('gateCancel').onclick=function(){$('gate').hidden=true;gateCb=null};
 
 /* ---------- 퀴즈 모드 ---------- */
-function repsN(){return S.mode==='quiz'?1:S.reps}
+function repsN(){return runMode==='quiz'?1:S.reps}
 function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1)),t=a[i];a[i]=a[j];a[j]=t}return a}
-function setMode(){var q=S.mode==='quiz';$('wrap').hidden=q;$('bottomBar').hidden=q;$('quizBox').hidden=!q;$('sayBtn').hidden=q;$('rwRetry').hidden=q}
+function setMode(){var q=runMode==='quiz';$('wrap').hidden=q;$('bottomBar').hidden=q;$('quizBox').hidden=!q;$('sayBtn').hidden=q;$('rwRetry').hidden=q}
 var tries=0,autoT=null;
 function loadQuiz(){
   var it=items[idx];tries=0;
@@ -656,17 +689,55 @@ function dictFail(r){
   setTimeout(function(){if(!$('play').hidden&&$('reward').hidden)speak(items[idx].w,{rate:0.85})},2300);
 }
 
+/* ---------- 활동 선택 버튼 ---------- */
+function setAct(m){S.mode=m;saveSettings();
+  /* 초기화(fillForm)에서 먼저 불리므로 바깥 변수에 기대지 않는다 */
+  var hints={trace:'연한 글자 위에 손가락이나 펜으로 따라 써요. 그림이 있는 낱말은 그림도 함께 보여요.',
+    dictate:'낱말을 들려주고 빈칸에 쓰게 해요. 맞히면 그림이 나타나고, 두 번 틀리면 연한 글자가 나와 따라 쓸 수 있어요. "채점 너그럽기"가 합격 기준이에요.'};
+  Array.prototype.forEach.call($('acts').children,function(b){b.classList.toggle('on',b.dataset.act===m)});
+  $('actHint').textContent=hints[m]||'';
+  $('startBtn').textContent='▶ '+(m==='dictate'?'받아쓰기':'따라쓰기')+' 시작'}
+$('acts').addEventListener('click',function(e){var b=e.target.closest('.act');if(!b)return;
+  if(b.dataset.act==='quiz'){readForm();openQuizPick();return}
+  setAct(b.dataset.act)});
+
+/* ---------- 퀴즈 묶음 고르기 팝업 ---------- */
+var qSel={},qFavList=[];
+function qCard(p,key){var ems=p.w.map(function(x){return x[1]}).join('');
+  return '<button type="button" class="qp'+(qSel[key]?' on':'')+'" data-k="'+esc(key)+'"><b>'+esc(p.t)+'</b><span>'+ems+'</span></button>'}
+function openQuizPick(){
+  qSel={};(S.quizSel||[]).forEach(function(k){qSel[k]=true});
+  $('qCons').innerHTML=PACKS_CONS.map(function(p){return qCard(p,'c:'+p.t)}).join('');
+  $('qVow').innerHTML=PACKS_VOW.map(function(p){return qCard(p,'v:'+p.t)}).join('');
+  qFavList=loadFavs().map(function(f){return {t:f.name,w:f.words.split(/\s+/).filter(Boolean).map(function(x){return [x,EMOJI[x]||'']}).filter(function(x){return x[1]})}}).filter(function(p){return p.w.length>=2});
+  $('qFavSec').hidden=!qFavList.length;$('qFav').innerHTML=qFavList.map(function(p){return qCard(p,'f:'+p.t)}).join('');
+  $('nch').value=String(S.nch||3);$('qcount').value=String(S.qcount==null?10:S.qcount);
+  $('quizPick').hidden=false;
+}
+$('quizPick').addEventListener('click',function(e){var b=e.target.closest('.qp');if(!b)return;var k=b.dataset.k;qSel[k]=!qSel[k];b.classList.toggle('on',!!qSel[k])});
+$('qCancel').onclick=function(){$('quizPick').hidden=true};
+$('qStart').onclick=function(){
+  var keys=Object.keys(qSel).filter(function(k){return qSel[k]});
+  if(!keys.length){alert('묶음을 하나 이상 골라 주세요.');return}
+  var seen={},list=[];
+  keys.forEach(function(k){var sec=k.slice(0,2),t=k.slice(2),src=sec==='c:'?PACKS_CONS:(sec==='v:'?PACKS_VOW:qFavList);
+    src.forEach(function(p){if(p.t!==t)return;p.w.forEach(function(x){if(x[1]&&!seen[x[0]]){seen[x[0]]=1;list.push({w:x[0],e:x[1]})}})})});
+  if(list.length<2){alert('그림이 있는 낱말이 2개 이상 되도록 골라 주세요.');return}
+  S.quizSel=keys;S.nch=+$('nch').value;S.qcount=+$('qcount').value;saveSettings();
+  shuffle(list);items=S.qcount>0?list.slice(0,S.qcount):list;
+  runMode='quiz';$('quizPick').hidden=true;
+  idx=0;rep=0;results=[];show('play');wake();enterKiosk();setMode();loadItem();
+};
+
 /* ---------- 흐름 ---------- */
-function startPlay(){readForm();items=buildItems();
-  if(S.mode==='quiz'){items=items.filter(function(i){return i.e});
-    if(items.length<2){alert('퀴즈는 그림이 있는 낱말이 2개 이상 필요해요. 자음별·모음별 묶음을 골라 주세요.');return}}
-  else if(!items.length){alert('쓸 글자를 적어 주세요.');return}
+function startPlay(){readForm();runMode=S.mode==='dictate'?'dictate':'trace';items=buildItems();
+  if(!items.length){alert('쓸 글자를 적어 주세요.');return}
   idx=0;rep=0;results=[];show('play');wake();enterKiosk();setMode();
   var p=document.fonts&&document.fonts.load?document.fonts.load(fontStr(40)):Promise.resolve();
   p.catch(function(){}).then(function(){loadItem()});
 }
 function loadItem(){strokes=[];cur=null;activeId=null;
-  if(S.mode==='quiz'){loadQuiz();return}
+  if(runMode==='quiz'){loadQuiz();return}
   dictFails=0;dictHint=false;
   $('prog').textContent=(idx+1)+' / '+items.length+(repsN()>1?'  ·  '+(rep+1)+'번째':'');
   layout();
