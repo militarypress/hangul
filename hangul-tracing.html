@@ -97,8 +97,8 @@ textarea{min-height:92px;resize:vertical;font-size:18px}
         <select id="style"><option value="outline">점선 테두리</option><option value="dots">점무늬 글씨</option><option value="gray">연한 글씨</option></select></div>
       <div><label for="size">칸 크기</label>
         <select id="size"><option value="45">아주 크게 4.5cm</option><option value="36" selected>크게 3.6cm</option><option value="30">보통 3cm</option><option value="23">작게 2.3cm</option></select></div>
-      <div><label for="lines">낱말마다 줄 수</label>
-        <select id="lines"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+      <div><label for="lines">낱말마다 몇 번 (보기 글자 포함)</label>
+        <select id="lines"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option><option>9</option><option>10</option><option>11</option><option>12</option><option>15</option><option>20</option></select></div>
       <div><label for="font">글씨체</label>
         <select id="font"><option value="Nanum Gothic">나눔고딕</option><option value="Gowun Dodum">고운돋움</option><option value="Noto Sans KR">본고딕</option><option value="Jua">주아 (둥글고 굵게)</option></select></div>
     </div>
@@ -139,20 +139,23 @@ textarea{min-height:92px;resize:vertical;font-size:18px}
       h+='<tr class="wordrow'+(o.pageEach&&wi>0?' newpage':'')+'"><td><div class="word">';
       var fam="font-family:'"+o.font+"','Malgun Gothic',sans-serif";
       if(o.caption) h+='<div class="caption" style="'+fam+'"><small>'+(wi+1)+'</small>'+esc(w)+'</div>';
-      for(var i=0;i<o.lines;i++){
-        h+='<div class="row">';
-        for(var g=0;g<groups;g++){
-          var kind='trace';
-          if(i===0&&g===0) kind='model';
-          else if(o.blank&&o.lines>1&&i===o.lines-1) kind='blank';
-          else if(o.blank&&o.lines===1&&groups>2&&g===groups-1) kind='blank';
-          h+='<div class="group">'+chars.map(function(c){return cell(c,kind,o)}).join('')+'</div>';
-        }
-        h+='</div>';
+      /* o.lines = 낱말을 쓰는 총 횟수. 한 줄에 groups개씩 채우고 넘치면 다음 줄 */
+      var total=o.lines;
+      for(var k=0;k<total;k++){
+        if(k%groups===0) h+='<div class="row">';
+        var kind='trace';
+        if(k===0) kind='model';
+        else if(o.blank&&total>=3&&k===total-1) kind='blank';
+        h+='<div class="group">'+chars.map(function(c){return cell(c,kind,o)}).join('')+'</div>';
+        if(k%groups===groups-1||k===total-1) h+='</div>';
       }
       h+='</div></td></tr>';
     });
     h+='</tbody></table>';
+    /* 인쇄 작업 이름·PDF 파일명은 <title>을 따르므로 학습지 제목 + 낱말로 맞춘다 */
+    var docName=$('title').value.trim()||'한글 따라쓰기';
+    if(words.length) docName+=' - '+words.slice(0,3).join(' ')+(words.length>3?' 외':'');
+    document.title=docName;
     paper.style.setProperty('--cell',o.size+'mm');
     paper.innerHTML=h;
     fit();
