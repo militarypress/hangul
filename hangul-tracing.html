@@ -1,0 +1,167 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>한글 따라쓰기 공책</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Gowun+Dodum&family=Jua&family=Nanum+Gothic:wght@400;700&family=Noto+Sans+KR:wght@300;500&display=swap">
+<style>
+/* 배치: 왼쪽에 설정 패널(칠판), 오른쪽에 A4 종이 미리보기. 좁은 화면에서는 위아래로 쌓인다. */
+:root{
+  --bg:#e9f0ed; --panel:#ffffff; --fg:#1b2a27; --muted:#5d716c; --line:#c9d6d1;
+  --accent:#1f6f62; --accent-fg:#ffffff; --chalk:#f0bd3f;
+  --paper:#ffffff; --ink:#111111; --trace:#c4c4c4; --dot:#7d7d7d; --guide:#d9d9d9; --box:#9a9a9a;
+  --display:"Jua","Gowun Dodum","Malgun Gothic",sans-serif;
+  --body:"Gowun Dodum","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121d1b; --panel:#1b2a27; --fg:#e4eeeb; --muted:#9db1ab; --line:#33473f;
+  --accent:#5fc4b0; --accent-fg:#0d1a17; --chalk:#f0bd3f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121d1b; --panel:#1b2a27; --fg:#e4eeeb; --muted:#9db1ab; --line:#33473f;
+  --accent:#5fc4b0; --accent-fg:#0d1a17; --chalk:#f0bd3f; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.6;padding-inline:16px;padding-block:20px 40px}
+.app{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:320px minmax(0,1fr);gap:24px;align-items:start}
+@media (max-width:860px){.app{grid-template-columns:minmax(0,1fr)}}
+.controls{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;display:flex;flex-direction:column;gap:16px}
+@media (min-width:861px){.controls{position:sticky;top:calc(env(safe-area-inset-top,0px) + 16px)}}
+h1{font-family:var(--display);font-weight:400;font-size:28px;line-height:1.2;margin:0;text-wrap:balance}
+h1 span{box-shadow:inset 0 -0.4em 0 var(--chalk)}
+.lead{margin:0;color:var(--muted);font-size:14px}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+textarea,select,input[type=text]{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+textarea{min-height:92px;resize:vertical;font-size:18px}
+:is(textarea,select,input,button):focus-visible{outline:3px solid var(--chalk);outline-offset:1px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font:inherit;font-size:13px;color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:999px;padding:3px 12px;cursor:pointer}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.check{display:flex;gap:8px;align-items:center;font-size:14px;color:var(--fg);margin:0}
+.print{font-family:var(--display);font-size:18px;background:var(--accent);color:var(--accent-fg);border:0;border-radius:10px;padding:12px;cursor:pointer}
+.hint{margin:0;font-size:13px;color:var(--fg);background:var(--bg);border-left:4px solid var(--chalk);padding:8px 10px}
+.stage{min-width:0}
+.paper{width:210mm;min-height:297mm;background:var(--paper);color:var(--ink);padding:12mm;box-shadow:0 2px 14px rgba(0,0,0,.18);transform-origin:top left}
+.sheet-head{display:flex;justify-content:space-between;align-items:flex-end;gap:8mm;margin-bottom:6mm;font-size:13pt;color:var(--ink)}
+.sheet-head b{font-family:var(--display);font-weight:400;font-size:18pt}
+.blank-line{display:inline-block;width:38mm;border-bottom:1px solid var(--ink);margin-left:2mm}
+.word{margin-bottom:6mm;break-inside:avoid;page-break-inside:avoid}
+.row{display:flex;gap:3mm;margin-bottom:1.5mm}
+.group{display:flex;flex-wrap:wrap}
+.cell{width:var(--cell);height:var(--cell);display:block;margin-right:-0.25mm}
+.cell .box{fill:none;stroke:var(--box);stroke-width:.8}
+.cell .guide{stroke:var(--guide);stroke-width:.6;stroke-dasharray:2 2;fill:none}
+.cell text{font-size:74px;text-anchor:middle;dominant-baseline:central}
+.cell .model{fill:var(--ink)}
+.cell .gray{fill:var(--trace)}
+.cell .outline{fill:none;stroke:var(--dot);stroke-width:1.5;stroke-linecap:round;stroke-dasharray:0 2.7}
+.cell .dots{fill:url(#dotfill)}
+.empty{color:var(--muted);font-size:14pt}
+@page{size:A4;margin:12mm}
+@media print{
+  body{background:var(--paper);padding:0}
+  .controls{display:none}
+  .app{display:block;max-width:none}
+  .paper{width:auto;min-height:0;padding:0;box-shadow:none;zoom:1!important}
+  *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <pattern id="dotfill" width="3.2" height="3.2" patternUnits="userSpaceOnUse"><rect width="3.2" height="3.2" fill="#ffffff"/><circle cx="1.6" cy="1.6" r="1" fill="#6f6f6f"/></pattern>
+</defs></svg>
+
+<div class="app">
+  <form class="controls" id="form">
+    <h1><span>한글 따라쓰기</span> 공책</h1>
+    <p class="lead">낱말을 적으면 따라 쓰는 학습지가 바로 만들어집니다. 띄어쓰기나 줄바꿈으로 낱말을 나누세요.</p>
+    <div>
+      <label for="words">쓸 글자 · 낱말</label>
+      <textarea id="words">ㄱ ㄴ ㄷ ㄹ ㅁ</textarea>
+    </div>
+    <div>
+      <label>처음 배우는 순서대로 골라 넣기</label>
+      <div class="chips" id="presets">
+        <button type="button" data-w="ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ">모음 10자</button>
+        <button type="button" data-w="ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ">자음 14자</button>
+        <button type="button" data-w="가 나 다 라 마 바 사 아 자 차 카 타 파 하">가나다</button>
+        <button type="button" data-w="아이 우유 오이 나무 나비 모자 바지 사자">받침 없는 낱말</button>
+      </div>
+    </div>
+    <div class="grid2">
+      <div><label for="style">따라 쓸 글자 모양</label>
+        <select id="style"><option value="outline">점선 테두리</option><option value="dots">점무늬 글씨</option><option value="gray">연한 글씨</option></select></div>
+      <div><label for="size">칸 크기</label>
+        <select id="size"><option value="45">아주 크게 4.5cm</option><option value="36" selected>크게 3.6cm</option><option value="30">보통 3cm</option><option value="23">작게 2.3cm</option></select></div>
+      <div><label for="lines">낱말마다 줄 수</label>
+        <select id="lines"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></div>
+      <div><label for="font">글씨체</label>
+        <select id="font"><option value="Nanum Gothic">나눔고딕</option><option value="Gowun Dodum">고운돋움</option><option value="Noto Sans KR">본고딕</option><option value="Jua">주아 (둥글고 굵게)</option></select></div>
+    </div>
+    <label class="check" for="guide"><input type="checkbox" id="guide" checked> 칸 안에 십자 보조선</label>
+    <label class="check" for="blank"><input type="checkbox" id="blank" checked> 마지막은 빈칸으로 (혼자 써 보기)</label>
+    <div><label for="title">학습지 제목</label><input type="text" id="title" value="한글 따라쓰기"></div>
+    <button type="button" class="print" id="print">인쇄하기</button>
+    <p class="hint" id="hint" hidden>이 화면에서는 인쇄 창이 열리지 않습니다. 대화에 함께 받은 파일(hangul-tracing.html)을 크롬이나 엣지에서 열면 같은 화면에서 인쇄 단추가 작동합니다.</p>
+  </form>
+
+  <div class="stage" id="stage">
+    <div class="paper" id="paper"></div>
+  </div>
+</div>
+
+<script>
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  var paper=$('paper'), stage=$('stage');
+  var USABLE=186; // A4 너비 210mm - 여백 12mm × 2
+  function esc(s){return s.replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+  function cell(ch,kind,o){
+    var s='<svg class="cell" viewBox="0 0 100 100"><rect class="box" x="0.5" y="0.5" width="99" height="99"/>';
+    if(o.guide) s+='<path class="guide" d="M50 1V99M1 50H99"/>';
+    if(kind!=='blank') s+='<text x="50" y="50" class="'+(kind==='model'?'model':o.style)+'" style="font-family:\''+o.font+'\',\'Malgun Gothic\',sans-serif">'+esc(ch)+'</text>';
+    return s+'</svg>';
+  }
+  function render(){
+    var o={style:$('style').value,size:+$('size').value,lines:+$('lines').value,font:$('font').value,guide:$('guide').checked,blank:$('blank').checked};
+    var words=$('words').value.split(/[\s,]+/).filter(Boolean);
+    var cols=Math.max(1,Math.floor(USABLE/o.size));
+    var h='<div class="sheet-head"><b>'+esc($('title').value)+'</b><span>이름<i class="blank-line"></i> &nbsp; 날짜<i class="blank-line"></i></span></div>';
+    if(!words.length) h+='<p class="empty">왼쪽에 글자나 낱말을 적어 주세요.</p>';
+    words.forEach(function(w){
+      var chars=Array.from(w), groups=Math.max(1,Math.floor(cols/chars.length));
+      h+='<div class="word">';
+      for(var i=0;i<o.lines;i++){
+        h+='<div class="row">';
+        for(var g=0;g<groups;g++){
+          var kind='trace';
+          if(i===0&&g===0) kind='model';
+          else if(o.blank&&o.lines>1&&i===o.lines-1) kind='blank';
+          else if(o.blank&&o.lines===1&&groups>2&&g===groups-1) kind='blank';
+          h+='<div class="group">'+chars.map(function(c){return cell(c,kind,o)}).join('')+'</div>';
+        }
+        h+='</div>';
+      }
+      h+='</div>';
+    });
+    paper.style.setProperty('--cell',o.size+'mm');
+    paper.innerHTML=h;
+    fit();
+  }
+  function fit(){
+    paper.style.zoom=1;
+    var z=Math.min(1,stage.clientWidth/paper.offsetWidth);
+    paper.style.zoom=z;
+  }
+  $('form').addEventListener('input',render);
+  $('form').addEventListener('submit',function(e){e.preventDefault()});
+  $('presets').addEventListener('click',function(e){
+    var b=e.target.closest('button'); if(!b) return;
+    $('words').value=b.dataset.w; render();
+  });
+  $('print').addEventListener('click',function(){
+    var framed=true; try{framed=window.self!==window.top}catch(e){}
+    if(framed){$('hint').hidden=false}else{window.print()}
+  });
+  window.addEventListener('resize',fit);
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fit);
+  render();
+})();
+</script>

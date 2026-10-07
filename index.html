@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#1f6f62">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>한글 따라쓰기</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Gowun+Dodum&display=swap">
+<style>
+:root{
+  --bg:#e9f0ed; --panel:#ffffff; --fg:#1b2a27; --muted:#5d716c; --line:#c9d6d1;
+  --accent:#1f6f62; --accent-fg:#ffffff; --chalk:#f0bd3f; --danger:#c0392b;
+  --display:"Jua","Gowun Dodum","Malgun Gothic",sans-serif;
+  --body:"Gowun Dodum","Malgun Gothic","Apple SD Gothic Neo",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#121d1b; --panel:#1b2a27; --fg:#e4eeeb; --muted:#9db1ab; --line:#33473f;
+  --accent:#5fc4b0; --accent-fg:#0d1a17; color-scheme:dark}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--body);font-size:16px;line-height:1.5;
+  overscroll-behavior:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+[hidden]{display:none!important}
+button{font:inherit;cursor:pointer}
+h1{font-family:var(--display);font-weight:400;font-size:30px;line-height:1.2;margin:0}
+h1 span{box-shadow:inset 0 -0.4em 0 var(--chalk)}
+h2{font-family:var(--display);font-weight:400;font-size:22px;margin:0}
+label{display:block;font-size:13px;color:var(--muted);margin-bottom:4px}
+textarea,select,input[type=text],input[type=number]{width:100%;font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:10px 12px}
+textarea{min-height:88px;resize:vertical;font-size:20px}
+:is(textarea,select,input,button):focus-visible{outline:3px solid var(--chalk);outline-offset:1px}
+
+/* ---------- 부모 화면 ---------- */
+#parent{max-width:760px;margin:0 auto;padding:20px 16px 48px;padding-top:calc(20px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.lead{margin:0;color:var(--muted);font-size:14px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips button{font-size:13px;color:var(--fg);background:transparent;border:1px solid var(--line);border-radius:999px;padding:5px 13px}
+.chips button:hover{border-color:var(--accent);color:var(--accent)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:480px){.grid2{grid-template-columns:1fr}}
+.check{display:flex;gap:8px;align-items:center;font-size:15px;color:var(--fg);margin:0}
+.check input{width:20px;height:20px}
+.big{font-family:var(--display);font-size:22px;background:var(--accent);color:var(--accent-fg);border:0;border-radius:12px;padding:16px}
+.ghost{background:transparent;border:1px solid var(--line);color:var(--fg);border-radius:10px;padding:10px 14px}
+.hint{margin:0;font-size:13px;color:var(--fg);background:var(--bg);border-left:4px solid var(--chalk);padding:8px 10px;line-height:1.5}
+.hint b{font-weight:700}
+a{color:var(--accent)}
+
+/* ---------- 아이 화면 ---------- */
+#play{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg)}
+.bar{display:flex;align-items:center;gap:10px;padding:8px 12px}
+.bar.top{padding-top:calc(8px + env(safe-area-inset-top))}
+.bar.bottom{padding-bottom:calc(10px + env(safe-area-inset-bottom));justify-content:center;flex-wrap:wrap}
+.prog{font-family:var(--display);font-size:22px;color:var(--muted);flex:1}
+.ico{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);font-size:20px;display:grid;place-items:center}
+#wrap{flex:1;position:relative;min-height:0;touch-action:none}
+#wrap canvas{position:absolute;left:0;top:0;touch-action:none}
+.btn{font-family:var(--display);font-size:20px;border:1px solid var(--line);background:var(--panel);color:var(--fg);border-radius:14px;padding:12px 18px;min-height:56px}
+.btn.primary{background:var(--accent);color:var(--accent-fg);border-color:var(--accent);font-size:24px;padding:12px 28px}
+.swatches{display:flex;gap:8px;align-items:center;margin-right:8px}
+.sw{width:36px;height:36px;border-radius:50%;border:3px solid transparent;padding:0;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.sw.on{border-color:var(--fg);transform:scale(1.15)}
+
+/* ---------- 오버레이 ---------- */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:20;padding:16px}
+.box{background:var(--panel);border-radius:24px;padding:28px 32px;text-align:center;min-width:300px;max-width:92vw;box-shadow:0 10px 40px rgba(0,0,0,.3)}
+.animal{font-size:120px;line-height:1.1;animation:pop .6s cubic-bezier(.2,1.5,.4,1) both, wiggle 1.4s .7s ease-in-out infinite}
+.msg{font-family:var(--display);font-size:34px;margin:8px 0 4px}
+.score{color:var(--muted);font-size:14px;min-height:20px}
+.stars{margin:6px 0 14px}
+.stars span{font-size:46px;display:inline-block;filter:grayscale(1);opacity:.22;transform:scale(.8)}
+.stars span.on{animation:star .5s cubic-bezier(.2,1.5,.4,1) forwards}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+@keyframes pop{from{transform:scale(0) rotate(-25deg);opacity:0}to{transform:none;opacity:1}}
+@keyframes wiggle{0%,100%{transform:rotate(-7deg)}50%{transform:rotate(7deg)}}
+@keyframes star{to{filter:none;opacity:1;transform:scale(1)}}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:30}
+.gateQ{font-family:var(--display);font-size:36px;margin:6px 0 10px}
+.gateIn{font-size:28px;text-align:center;width:140px;margin:0 auto 14px}
+
+/* ---------- 결과 화면 ---------- */
+#summary{max-width:640px;margin:0 auto;padding:24px 16px 48px;padding-top:calc(24px + env(safe-area-inset-top));display:flex;flex-direction:column;gap:16px;text-align:center}
+.total{font-family:var(--display);font-size:40px}
+.parade{font-size:56px;line-height:1.3;letter-spacing:6px}
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px;text-align:left}
+.list li{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 14px}
+.list .w{font-family:var(--display);font-size:24px;flex:1}
+.list .st{color:var(--chalk);font-size:20px;letter-spacing:2px}
+.list .an{font-size:26px}
+
+/* ---------- 폰(좁은 화면) ---------- */
+@media (max-width:600px){
+  .bar.bottom{gap:6px;padding:8px 10px}
+  .swatches{gap:5px;margin-right:4px}
+  .sw{width:28px;height:28px;border-width:2px}
+  .btn{font-size:17px;padding:10px 12px;min-height:44px}
+  .btn .t{display:none}
+  .btn.primary{flex-basis:100%;font-size:21px;min-height:52px}
+  .prog{font-size:18px}
+  .overlay{padding:12px}
+  .box{min-width:0;width:100%;max-width:calc(100vw - 24px);padding:22px 18px}
+  .animal{font-size:96px}
+  .msg{font-size:28px}
+}
+</style>
+</head>
+<body>
+
+<!-- ============ 부모 설정 화면 ============ -->
+<section id="parent" class="screen">
+  <h1><span>한글 따라쓰기</span> 태블릿</h1>
+  <p class="lead">아이가 손가락이나 펜으로 글자를 따라 쓰면, 얼마나 잘 썼는지 별과 동물 친구로 알려줘요.</p>
+
+  <form class="card" id="form">
+    <div>
+      <label for="words">쓸 글자 · 낱말 (띄어쓰기로 구분)</label>
+      <textarea id="words">가 나 다 라 마</textarea>
+    </div>
+    <div>
+      <label>골라 넣기</label>
+      <div class="chips" id="presets">
+        <button type="button" data-w="ㅏ ㅑ ㅓ ㅕ ㅗ ㅛ ㅜ ㅠ ㅡ ㅣ">모음 10자</button>
+        <button type="button" data-w="ㄱ ㄴ ㄷ ㄹ ㅁ ㅂ ㅅ ㅇ ㅈ ㅊ ㅋ ㅌ ㅍ ㅎ">자음 14자</button>
+        <button type="button" data-w="가 나 다 라 마 바 사 아 자 차 카 타 파 하">가나다</button>
+        <button type="button" data-w="아이 우유 오이 나무 나비 모자 바지 사자">받침 없는 낱말</button>
+        <button type="button" data-w="책 달 별 산 꽃 집 밥 눈">받침 있는 낱말</button>
+      </div>
+    </div>
+    <label class="check" for="perChar"><input type="checkbox" id="perChar"> 낱말을 한 글자씩 따로 연습</label>
+    <div class="grid2">
+      <div><label for="font">글씨체</label>
+        <select id="font"><option value="Jua">주아 (둥글고 굵게 · 추천)</option><option value="Gowun Dodum">고운돋움</option><option value="sans-serif">기기 기본 글꼴</option></select></div>
+      <div><label for="style">따라 쓸 글자 모양</label>
+        <select id="style"><option value="gray">연한 글씨</option><option value="outline">점선 테두리</option></select></div>
+      <div><label for="level">채점 너그럽기</label>
+        <select id="level"><option value="easy">쉽게 (삐져나가도 OK)</option><option value="normal" selected>보통</option><option value="hard">어렵게</option></select></div>
+      <div><label for="brush">선 굵기</label>
+        <select id="brush"><option value="0.06">가늘게</option><option value="0.08" selected>보통</option><option value="0.11">굵게</option></select></div>
+    </div>
+    <label class="check" for="guide"><input type="checkbox" id="guide" checked> 칸 안에 십자 보조선</label>
+    <label class="check" for="sound"><input type="checkbox" id="sound" checked> 효과음</label>
+    <button type="button" class="big" id="startBtn">▶ 시작하기</button>
+    <p class="hint">아이 화면에서 <b>⚙</b> 단추를 누르면 더하기 문제가 나와요. 맞혀야 이 설정 화면으로 돌아옵니다.</p>
+  </form>
+  <p class="lead" style="text-align:center">인쇄해서 쓰려면 → <a href="hangul-tracing.html">인쇄용 학습지 만들기</a></p>
+</section>
+
+<!-- ============ 아이 따라쓰기 화면 ============ -->
+<section id="play" class="screen" hidden>
+  <div class="bar top">
+    <button type="button" class="ico" id="gearBtn" aria-label="설정">⚙</button>
+    <div class="prog" id="prog">1 / 5</div>
+    <button type="button" class="ico" id="fsBtn" aria-label="전체화면">⛶</button>
+  </div>
+  <div id="wrap">
+    <canvas id="base"></canvas>
+    <canvas id="ink"></canvas>
+  </div>
+  <div class="bar bottom">
+    <div class="swatches" id="swatches"></div>
+    <button type="button" class="btn" id="undoBtn">↩<span class="t"> 한 획</span></button>
+    <button type="button" class="btn" id="clearBtn">🧹<span class="t"> 다 지우기</span></button>
+    <button type="button" class="btn primary" id="doneBtn">다 썼어요 ✓</button>
+  </div>
+</section>
+
+<!-- ============ 보상 오버레이 ============ -->
+<div id="reward" class="overlay" hidden>
+  <div class="box">
+    <div class="animal" id="rwAnimal">🐰</div>
+    <div class="msg" id="rwMsg">참 잘했어요!</div>
+    <div class="stars" id="rwStars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
+    <div class="score" id="rwScore"></div>
+    <div class="row">
+      <button type="button" class="btn" id="rwRetry">다시 쓰기</button>
+      <button type="button" class="btn primary" id="rwNext">다음 글자 →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 부모 확인 (더하기 문제) ============ -->
+<div id="gate" class="overlay" hidden>
+  <div class="box">
+    <div style="color:var(--muted);font-size:14px">어른인지 확인할게요</div>
+    <div class="gateQ" id="gateQ">3 + 4 = ?</div>
+    <input type="number" inputmode="numeric" class="gateIn" id="gateA" placeholder="답">
+    <div class="row">
+      <button type="button" class="btn" id="gateCancel">취소</button>
+      <button type="button" class="btn primary" id="gateOk">확인</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 결과 화면 ============ -->
+<section id="summary" class="screen" hidden>
+  <h2>오늘의 결과</h2>
+  <div class="total" id="sumTotal">⭐ 0 / 0</div>
+  <div class="parade" id="parade"></div>
+  <ul class="list" id="sumList"></ul>
+  <div class="row">
+    <button type="button" class="btn primary" id="againBtn">처음부터 다시</button>
+    <button type="button" class="btn" id="toParentBtn">⚙ 설정</button>
+  </div>
+</section>
+
+<canvas id="fx"></canvas>
+
+<script>
+(function(){
+'use strict';
+var $=function(id){return document.getElementById(id)};
+var LS_KEY='hangul-trace-v1';
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function pick(a){return a[Math.floor(Math.random()*a.length)]}
+
+/* ---------- 설정 ---------- */
+var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,guide:true,sound:true,color:'#2980b9'};
+var S=loadSettings();
+function loadSettings(){try{var j=localStorage.getItem(LS_KEY);if(j)return Object.assign({},DEFAULTS,JSON.parse(j))}catch(e){}return Object.assign({},DEFAULTS)}
+function saveSettings(){try{localStorage.setItem(LS_KEY,JSON.stringify(S))}catch(e){}}
+function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('guide').checked=S.guide;$('sound').checked=S.sound}
+function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.guide=$('guide').checked;S.sound=$('sound').checked;saveSettings()}
+fillForm();
+$('presets').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;$('words').value=b.dataset.w});
+$('form').addEventListener('submit',function(e){e.preventDefault()});
+
+/* ---------- 화면 전환 ---------- */
+function show(id){['parent','play','summary'].forEach(function(s){$(s).hidden=(s!==id)})}
+function buildItems(){var ws=S.words.split(/[\s,]+/).filter(Boolean);if(S.perChar){var out=[];ws.forEach(function(w){Array.from(w).forEach(function(c){out.push(c)})});return out}return ws}
+
+/* ---------- 상태 ---------- */
+var items=[],idx=0,results=[],strokes=[],cur=null,activeId=null,geom=null;
+var base=$('base'),ink=$('ink'),wrap=$('wrap');
+var bctx=base.getContext('2d'),ictx=ink.getContext('2d');
+
+/* ---------- 색 ---------- */
+var COLORS=['#e74c3c','#f39c12','#27ae60','#2980b9','#8e44ad','#ff6fa3','#222222'];
+var swEl=$('swatches');
+COLORS.forEach(function(c){var b=document.createElement('button');b.type='button';b.className='sw';b.style.background=c;b.dataset.c=c;b.setAttribute('aria-label','색');swEl.appendChild(b)});
+function setColor(c){S.color=c;saveSettings();Array.prototype.forEach.call(swEl.children,function(b){b.classList.toggle('on',b.dataset.c===c)});if(geom)redrawInk()}
+swEl.addEventListener('click',function(e){var b=e.target.closest('.sw');if(b)setColor(b.dataset.c)});
+setColor(S.color);
+
+/* ---------- 레이아웃 & 그리기 ---------- */
+function fontStr(px){return 'bold '+px+'px "'+S.font+'","Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif'}
+function layout(){
+  var r=wrap.getBoundingClientRect(),dpr=window.devicePixelRatio||1;
+  var W=Math.max(1,Math.floor(r.width)),H=Math.max(1,Math.floor(r.height));
+  [base,ink].forEach(function(c){c.width=Math.round(W*dpr);c.height=Math.round(H*dpr);c.style.width=W+'px';c.style.height=H+'px'});
+  var chars=Array.from(items[idx]||''),n=Math.max(1,chars.length),gap=10;
+  /* 칸이 가장 커지는 줄 수를 고른다 — 폰 세로화면에서 두세 글자 낱말은 2줄로 쌓인다 */
+  var best=null;
+  for(var rows=1;rows<=n;rows++){
+    var cols=Math.ceil(n/rows);
+    var c=Math.floor(Math.min((H*0.94-gap*(rows-1))/rows,(W*0.96-gap*(cols-1))/cols));
+    if(!best||c>best.cell)best={rows:rows,cols:cols,cell:c};
+  }
+  var cell=best.cell,rows=best.rows,cols=best.cols;
+  var y0=(H-(cell*rows+gap*(rows-1)))/2,cells=[];
+  for(var i=0;i<n;i++){
+    var rr=Math.floor(i/cols),cc=i%cols,inRow=Math.min(cols,n-rr*cols);
+    var rx0=(W-(cell*inRow+gap*(inRow-1)))/2;
+    cells.push({c:chars[i],x:rx0+cc*(cell+gap),y:y0+rr*(cell+gap)});
+  }
+  if(geom&&(geom.rows!==rows||geom.cols!==cols)){strokes=[];cur=null;activeId=null} /* 배치가 바뀌면 획 좌표가 안 맞으므로 비움 */
+  geom={dpr:dpr,W:W,H:H,cell:cell,gap:gap,chars:chars,x0:cells[0].x,y0:y0,rows:rows,cols:cols,cells:cells};
+  drawBase();redrawInk();
+}
+function roundRect(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.arcTo(x+w,y,x+w,y+h,r);ctx.arcTo(x+w,y+h,x,y+h,r);ctx.arcTo(x,y+h,x,y,r);ctx.arcTo(x,y,x+w,y,r);ctx.closePath()}
+function drawGlyphs(ctx,scale,opt){
+  var cell=geom.cell;ctx.save();ctx.setTransform(scale,0,0,scale,0,0);
+  ctx.font=fontStr(cell*0.74);ctx.textAlign='center';ctx.textBaseline='middle';
+  geom.cells.forEach(function(k){var cx=k.x+cell/2,cy=k.y+cell/2+cell*0.03;
+    if(opt.fill){ctx.fillStyle=opt.fill;ctx.fillText(k.c,cx,cy)}
+    if(opt.stroke){ctx.strokeStyle=opt.stroke;ctx.lineWidth=opt.lineWidth||2;ctx.lineJoin='round';ctx.lineCap='round';ctx.setLineDash(opt.dash||[]);ctx.strokeText(k.c,cx,cy)}
+  });ctx.restore();
+}
+function drawBase(){
+  var dpr=geom.dpr,cell=geom.cell;
+  bctx.setTransform(1,0,0,1,0,0);bctx.clearRect(0,0,base.width,base.height);
+  bctx.save();bctx.setTransform(dpr,0,0,dpr,0,0);
+  geom.cells.forEach(function(k){
+    bctx.fillStyle='#fff';bctx.strokeStyle='#9a9a9a';bctx.lineWidth=2;roundRect(bctx,k.x,k.y,cell,cell,cell*0.06);bctx.fill();bctx.stroke();
+    if(S.guide){bctx.save();bctx.strokeStyle='#d9d9d9';bctx.lineWidth=1.5;bctx.setLineDash([6,6]);bctx.beginPath();
+      bctx.moveTo(k.x+cell/2,k.y+4);bctx.lineTo(k.x+cell/2,k.y+cell-4);bctx.moveTo(k.x+4,k.y+cell/2);bctx.lineTo(k.x+cell-4,k.y+cell/2);bctx.stroke();bctx.restore()}
+  });bctx.restore();
+  if(S.style==='outline')drawGlyphs(bctx,dpr,{stroke:'#8a8a8a',lineWidth:Math.max(2,cell*0.012),dash:[cell*0.03,cell*0.03]});
+  else drawGlyphs(bctx,dpr,{fill:'#cfcfcf'});
+}
+/* 획 좌표는 칸 기준 정규화(u,v) — 화면 크기가 바뀌어도 같은 자리에 남는다 */
+function brushW(){return geom.cell*S.brush}
+function renderStrokes(ctx,scale,list,w,color){
+  var cell=geom.cell,x0=geom.x0,y0=geom.y0;
+  ctx.save();ctx.setTransform(scale,0,0,scale,0,0);ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle=color;ctx.fillStyle=color;
+  list.forEach(function(st){
+    if(st.length===1){var p=st[0];ctx.beginPath();ctx.arc(x0+p.u*cell,y0+p.v*cell,w*p.p/2,0,Math.PI*2);ctx.fill();return}
+    for(var i=1;i<st.length;i++){var a=st[i-1],b=st[i];ctx.beginPath();ctx.lineWidth=w*(a.p+b.p)/2;ctx.moveTo(x0+a.u*cell,y0+a.v*cell);ctx.lineTo(x0+b.u*cell,y0+b.v*cell);ctx.stroke()}
+  });ctx.restore();
+}
+function redrawInk(){ictx.setTransform(1,0,0,1,0,0);ictx.clearRect(0,0,ink.width,ink.height);renderStrokes(ictx,geom.dpr,strokes,brushW(),S.color)}
+
+/* ---------- 포인터 입력 ---------- */
+function pt(e){var r=ink.getBoundingClientRect(),p=1;if(e.pointerType==='pen'&&e.pressure>0)p=0.55+0.9*e.pressure;
+  return {u:(e.clientX-r.left-geom.x0)/geom.cell,v:(e.clientY-r.top-geom.y0)/geom.cell,p:p}}
+ink.addEventListener('pointerdown',function(e){
+  if(activeId!==null)return; if(e.pointerType==='mouse'&&e.button!==0)return;
+  e.preventDefault();activeId=e.pointerId;try{ink.setPointerCapture(e.pointerId)}catch(x){}
+  cur=[pt(e)];strokes.push(cur);redrawInk();initAudio();
+});
+ink.addEventListener('pointermove',function(e){
+  if(!cur||e.pointerId!==activeId)return;e.preventDefault();
+  if(e.getCoalescedEvents){e.getCoalescedEvents().forEach(function(ev){cur.push(pt(ev))})}else cur.push(pt(e));
+  redrawInk();
+});
+function endStroke(e){if(e.pointerId!==activeId)return;cur=null;activeId=null}
+ink.addEventListener('pointerup',endStroke);ink.addEventListener('pointercancel',endStroke);
+ink.addEventListener('contextmenu',function(e){e.preventDefault()});
+$('undoBtn').onclick=function(){strokes.pop();cur=null;activeId=null;redrawInk()};
+$('clearBtn').onclick=function(){strokes=[];cur=null;activeId=null;redrawInk()};
+
+/* ---------- 채점 ----------
+   coverage : 글자 영역 중 (조금 넓힌) 획이 덮은 비율  — "글자를 다 따라 그렸나"
+   precision: 획 픽셀 중 (조금 넓힌) 글자 안에 있는 비율 — "글자 밖으로 안 삐졌나" */
+function tolerance(){return geom.cell*({easy:0.13,normal:0.09,hard:0.055}[S.level]||0.09)}
+function evaluate(){
+  var es=Math.min(1,900/geom.W),W=Math.round(geom.W*es),H=Math.round(geom.H*es);
+  function mk(){var c=document.createElement('canvas');c.width=W;c.height=H;return c.getContext('2d')}
+  var tol=tolerance(),gX=mk(),nX=mk(),uX=mk(),dX=mk();
+  drawGlyphs(gX,es,{fill:'#000'});
+  drawGlyphs(nX,es,{fill:'#000',stroke:'#000',lineWidth:tol*2});
+  renderStrokes(uX,es,strokes,brushW(),'#000');
+  renderStrokes(dX,es,strokes,brushW()+tol*2,'#000');
+  var g=gX.getImageData(0,0,W,H).data,n=nX.getImageData(0,0,W,H).data,u=uX.getImageData(0,0,W,H).data,d=dX.getImageData(0,0,W,H).data;
+  var gp=0,cov=0,up=0,ins=0;
+  for(var i=3;i<g.length;i+=4){var G=g[i]>100,N=n[i]>100,U=u[i]>60,D=d[i]>60;
+    if(G){gp++;if(D)cov++}if(U){up++;if(N)ins++}}
+  if(up<W*H*0.0015)return {score:0,empty:true};
+  var coverage=gp?cov/gp:0,precision=up?ins/up:0;
+  return {score:Math.round(100*(0.5*coverage+0.5*precision)),coverage:coverage,precision:precision,empty:false};
+}
+
+/* ---------- 보상 ---------- */
+var TIERS=[
+  {min:85,stars:3,animals:['🦁','🐯','🦄','🐬','🦋','🐉'],msgs:['최고야!','완벽해요!','와, 대단해!','정말 멋져!']},
+  {min:68,stars:2,animals:['🐰','🐼','🐨','🦊','🐶','🐷'],msgs:['참 잘했어요!','멋져요!','아주 좋아요!']},
+  {min:48,stars:1,animals:['🐥','🐸','🐧','🐹','🐱','🐮'],msgs:['잘했어요!','좋아요!','점점 잘하고 있어요!']},
+  {min:22,stars:0,animals:['🐢','🐌','🐻'],msgs:['조금만 더!','거의 다 왔어요!','한 번 더 해볼까?']},
+  {min:0,stars:0,animals:['🐣','🐻'],msgs:['글자를 따라 그려 보세요','천천히 다시 해봐요']}
+];
+function showReward(r){
+  var tier=null;for(var i=0;i<TIERS.length;i++){if(r.score>=TIERS[i].min){tier=TIERS[i];break}}
+  var animal=pick(tier.animals),msg=r.empty?'글자를 따라 그려 보세요':pick(tier.msgs);
+  var prev=results[idx];
+  if(!prev||tier.stars>prev.stars||(tier.stars===prev.stars&&r.score>prev.score))results[idx]={score:r.score,stars:tier.stars,animal:animal};
+  $('rwAnimal').textContent=animal;$('rwMsg').textContent=msg;$('rwScore').textContent=r.empty?'':r.score+'점';
+  var st=$('rwStars').children;
+  for(var k=0;k<3;k++){st[k].classList.remove('on');void st[k].offsetWidth;if(k<tier.stars){st[k].style.animationDelay=(0.45+k*0.25)+'s';st[k].classList.add('on')}}
+  $('rwNext').textContent=idx<items.length-1?'다음 글자 →':'결과 보기';
+  $('reward').hidden=false;jingle(tier.stars);
+  if(tier.stars===3)confetti(200);else if(tier.stars===2)confetti(70);
+}
+$('doneBtn').onclick=function(){initAudio();showReward(evaluate())};
+$('rwRetry').onclick=function(){$('reward').hidden=true;strokes=[];redrawInk()};
+$('rwNext').onclick=function(){$('reward').hidden=true;if(idx<items.length-1){idx++;loadItem()}else showSummary()};
+
+/* ---------- 폭죽 ---------- */
+var fx=$('fx'),fctx=fx.getContext('2d'),parts=[],fxRun=false;
+function confetti(n){
+  var W=fx.width=window.innerWidth,H=fx.height=window.innerHeight,cols=['#f0bd3f','#ff6fa3','#5fc4b0','#2980b9','#e74c3c','#8e44ad'];
+  for(var i=0;i<n;i++)parts.push({x:W/2+(Math.random()-0.5)*W*0.3,y:H*0.45,vx:(Math.random()-0.5)*16,vy:-Math.random()*17-5,g:0.38,r:4+Math.random()*5,c:cols[i%cols.length],a:Math.random()*6,va:(Math.random()-0.5)*0.3,life:80+Math.random()*50});
+  if(!fxRun){fxRun=true;requestAnimationFrame(tick)}
+}
+function tick(){
+  var W=fx.width,H=fx.height;fctx.clearRect(0,0,W,H);
+  parts=parts.filter(function(p){return p.life-->0&&p.y<H+20});
+  parts.forEach(function(p){p.vy+=p.g;p.x+=p.vx;p.y+=p.vy;p.vx*=0.99;p.a+=p.va;
+    fctx.save();fctx.translate(p.x,p.y);fctx.rotate(p.a);fctx.fillStyle=p.c;fctx.globalAlpha=Math.min(1,p.life/30);fctx.fillRect(-p.r,-p.r/2,p.r*2,p.r);fctx.restore()});
+  if(parts.length)requestAnimationFrame(tick);else{fxRun=false;fctx.clearRect(0,0,W,H)}
+}
+
+/* ---------- 효과음 (외부 파일 없이 합성) ---------- */
+var ac=null;
+function initAudio(){if(!S.sound)return;if(!ac){try{ac=new (window.AudioContext||window.webkitAudioContext)()}catch(e){}}if(ac&&ac.state==='suspended')ac.resume()}
+function tone(f,t0,d,v,type){if(!ac||!S.sound)return;v=v||0.18;var t=ac.currentTime+t0,o=ac.createOscillator(),g=ac.createGain();o.type=type||'sine';o.frequency.value=f;
+  g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(v,t+0.02);g.gain.exponentialRampToValueAtTime(0.0001,t+d);o.connect(g);g.connect(ac.destination);o.start(t);o.stop(t+d+0.05)}
+function jingle(stars){initAudio();
+  if(stars>=3)[523,659,784,1047].forEach(function(f,i){tone(f,i*0.12,0.4)});
+  else if(stars===2)[523,659,784].forEach(function(f,i){tone(f,i*0.13,0.35)});
+  else if(stars===1)[523,659].forEach(function(f,i){tone(f,i*0.15,0.3)});
+  else tone(392,0,0.35,0.12,'triangle')}
+
+/* ---------- 부모 확인 ---------- */
+var gateCb=null;
+function gate(cb){var a=2+Math.floor(Math.random()*8),b=2+Math.floor(Math.random()*8);
+  $('gateQ').textContent=a+' + '+b+' = ?';$('gate').dataset.ans=a+b;$('gateA').value='';$('gateA').placeholder='답';$('gate').hidden=false;gateCb=cb;setTimeout(function(){$('gateA').focus()},50)}
+$('gateOk').onclick=function(){if(+$('gateA').value===+$('gate').dataset.ans){$('gate').hidden=true;var cb=gateCb;gateCb=null;if(cb)cb()}else{$('gateA').value='';$('gateA').placeholder='다시!'}};
+$('gateA').addEventListener('keydown',function(e){if(e.key==='Enter'){e.preventDefault();$('gateOk').click()}});
+$('gateCancel').onclick=function(){$('gate').hidden=true;gateCb=null};
+
+/* ---------- 흐름 ---------- */
+function startPlay(){readForm();items=buildItems();if(!items.length){alert('쓸 글자를 적어 주세요.');return}
+  idx=0;results=[];show('play');wake();
+  var p=document.fonts&&document.fonts.load?document.fonts.load(fontStr(40)):Promise.resolve();
+  p.catch(function(){}).then(function(){loadItem()});
+}
+function loadItem(){strokes=[];cur=null;activeId=null;$('prog').textContent=(idx+1)+' / '+items.length;layout()}
+function showSummary(){show('summary');releaseWake();
+  var total=results.reduce(function(a,r){return a+(r?r.stars:0)},0);
+  $('sumTotal').textContent='⭐ '+total+' / '+(items.length*3);
+  $('sumList').innerHTML=items.map(function(w,i){var r=results[i]||{stars:0,animal:'·'};
+    return '<li><span class="w">'+esc(w)+'</span><span class="st">'+'★'.repeat(r.stars)+'☆'.repeat(3-r.stars)+'</span><span class="an">'+r.animal+'</span></li>'}).join('');
+  $('parade').textContent=results.filter(function(r){return r&&r.stars>0}).map(function(r){return r.animal}).join(' ')||'🐣';
+  jingle(total>=items.length*2?3:1);if(total>=items.length*2)confetti(220);
+}
+$('startBtn').onclick=startPlay;
+$('gearBtn').onclick=function(){gate(function(){releaseWake();show('parent')})};
+$('toParentBtn').onclick=function(){gate(function(){show('parent')})};
+$('againBtn').onclick=function(){idx=0;results=[];show('play');wake();loadItem()};
+
+/* ---------- 전체화면 · 화면 켜짐 유지 ---------- */
+$('fsBtn').onclick=function(){var el=document.documentElement;
+  if(!document.fullscreenElement){var f=el.requestFullscreen||el.webkitRequestFullscreen;if(f){var p=f.call(el);if(p&&p.catch)p.catch(function(){})}
+    try{var tablet=Math.min(screen.width,screen.height)>=600;if(tablet&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(function(){})}catch(e){}}
+  else if(document.exitFullscreen)document.exitFullscreen()};
+var wl=null;
+function wake(){if(navigator.wakeLock){navigator.wakeLock.request('screen').then(function(l){wl=l}).catch(function(){})}}
+function releaseWake(){if(wl){wl.release().catch(function(){});wl=null}}
+document.addEventListener('visibilitychange',function(){if(document.visibilityState==='visible'&&!$('play').hidden)wake()});
+
+/* 창 크기 변경 시 다시 배치 (획은 정규화 좌표라 자리 유지) */
+var ro=null;if(window.ResizeObserver){ro=new ResizeObserver(function(){if(!$('play').hidden&&items.length)layout()});ro.observe(wrap)}
+else window.addEventListener('resize',function(){if(!$('play').hidden&&items.length)layout()});
+if(document.fonts&&document.fonts.ready)document.fonts.ready.then(function(){if(!$('play').hidden&&items.length)layout()});
+
+/* PWA (https에서만 동작; 파일로 열면 조용히 건너뜀) */
+if('serviceWorker' in navigator&&/^https?:/.test(location.protocol))navigator.serviceWorker.register('sw.js').catch(function(){});
+})();
+</script>
+</body>
+</html>
