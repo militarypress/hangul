@@ -93,6 +93,8 @@ a{color:var(--accent)}
 .list .w{font-family:var(--display);font-size:24px;flex:1}
 .list .st{color:var(--chalk);font-size:20px;letter-spacing:2px}
 .list .an{font-size:26px}
+.list .reps{display:flex;flex-wrap:wrap;gap:4px 14px;justify-content:flex-end}
+.list .rep{font-size:18px;color:var(--chalk);white-space:nowrap}
 
 /* ---------- 폰(좁은 화면) ---------- */
 @media (max-width:600px){
@@ -142,11 +144,15 @@ a{color:var(--accent)}
         <select id="level"><option value="easy">쉽게 (삐져나가도 OK)</option><option value="normal" selected>보통</option><option value="hard">어렵게</option></select></div>
       <div><label for="brush">선 굵기</label>
         <select id="brush"><option value="0.06">가늘게</option><option value="0.08" selected>보통</option><option value="0.11">굵게</option></select></div>
+      <div><label for="reps">글자마다 몇 번 쓸까요?</label>
+        <select id="reps"><option value="1">1번</option><option value="2" selected>2번</option><option value="3">3번</option><option value="4">4번</option><option value="5">5번</option></select></div>
     </div>
     <label class="check" for="guide"><input type="checkbox" id="guide" checked> 칸 안에 십자 보조선</label>
     <label class="check" for="sound"><input type="checkbox" id="sound" checked> 효과음</label>
+    <label class="check" for="voice"><input type="checkbox" id="voice" checked> 음성 (글자 읽어주기 · 칭찬)</label>
     <button type="button" class="big" id="startBtn">▶ 시작하기</button>
-    <p class="hint">아이 화면에서 <b>⚙</b> 단추를 누르면 더하기 문제가 나와요. 맞혀야 이 설정 화면으로 돌아옵니다.</p>
+    <p class="hint">잘 쓴 정도에 따라 동물 친구가 나와요 — <b>🐧 펭귄</b> 아주 잘 썼어요 · <b>🐰 토끼</b> 잘 썼어요 · <b>🐥 병아리</b> 조금 더 · <b>🐢 거북이</b> 다시 해봐요</p>
+    <p class="hint">아이 화면에서 <b>⚙</b> 단추나 뒤로가기를 누르면 더하기 문제가 나와요. 맞혀야 이 설정으로 돌아옵니다. 홈 버튼·앱 전환까지 막으려면 안드로이드의 <b>앱 고정</b> 기능을 같이 켜 주세요.</p>
   </form>
   <p class="lead" style="text-align:center">인쇄해서 쓰려면 → <a href="hangul-tracing.html">인쇄용 학습지 만들기</a></p>
 </section>
@@ -156,6 +162,7 @@ a{color:var(--accent)}
   <div class="bar top">
     <button type="button" class="ico" id="gearBtn" aria-label="설정">⚙</button>
     <div class="prog" id="prog">1 / 5</div>
+    <button type="button" class="ico" id="sayBtn" aria-label="글자 읽어주기">🔊</button>
     <button type="button" class="ico" id="fsBtn" aria-label="전체화면">⛶</button>
   </div>
   <div id="wrap">
@@ -176,7 +183,6 @@ a{color:var(--accent)}
     <div class="animal" id="rwAnimal">🐰</div>
     <div class="msg" id="rwMsg">참 잘했어요!</div>
     <div class="stars" id="rwStars"><span>⭐</span><span>⭐</span><span>⭐</span></div>
-    <div class="score" id="rwScore"></div>
     <div class="row">
       <button type="button" class="btn" id="rwRetry">다시 쓰기</button>
       <button type="button" class="btn primary" id="rwNext">다음 글자 →</button>
@@ -220,12 +226,12 @@ function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
 
 /* ---------- 설정 ---------- */
-var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,guide:true,sound:true,color:'#2980b9'};
+var DEFAULTS={words:'가 나 다 라 마',perChar:false,font:'Jua',style:'gray',level:'normal',brush:0.08,reps:2,guide:true,sound:true,voice:true,color:'#2980b9'};
 var S=loadSettings();
 function loadSettings(){try{var j=localStorage.getItem(LS_KEY);if(j)return Object.assign({},DEFAULTS,JSON.parse(j))}catch(e){}return Object.assign({},DEFAULTS)}
 function saveSettings(){try{localStorage.setItem(LS_KEY,JSON.stringify(S))}catch(e){}}
-function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('guide').checked=S.guide;$('sound').checked=S.sound}
-function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.guide=$('guide').checked;S.sound=$('sound').checked;saveSettings()}
+function fillForm(){$('words').value=S.words;$('perChar').checked=S.perChar;$('font').value=S.font;$('style').value=S.style;$('level').value=S.level;$('brush').value=String(S.brush);$('reps').value=String(S.reps);$('guide').checked=S.guide;$('sound').checked=S.sound;$('voice').checked=S.voice}
+function readForm(){S.words=$('words').value;S.perChar=$('perChar').checked;S.font=$('font').value;S.style=$('style').value;S.level=$('level').value;S.brush=+$('brush').value;S.reps=+$('reps').value;S.guide=$('guide').checked;S.sound=$('sound').checked;S.voice=$('voice').checked;saveSettings()}
 fillForm();
 $('presets').addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;$('words').value=b.dataset.w});
 $('form').addEventListener('submit',function(e){e.preventDefault()});
@@ -235,7 +241,7 @@ function show(id){['parent','play','summary'].forEach(function(s){$(s).hidden=(s
 function buildItems(){var ws=S.words.split(/[\s,]+/).filter(Boolean);if(S.perChar){var out=[];ws.forEach(function(w){Array.from(w).forEach(function(c){out.push(c)})});return out}return ws}
 
 /* ---------- 상태 ---------- */
-var items=[],idx=0,results=[],strokes=[],cur=null,activeId=null,geom=null;
+var items=[],idx=0,rep=0,results=[],strokes=[],cur=null,activeId=null,geom=null;
 var base=$('base'),ink=$('ink'),wrap=$('wrap');
 var bctx=base.getContext('2d'),ictx=ink.getContext('2d');
 
@@ -346,28 +352,32 @@ function evaluate(){
 }
 
 /* ---------- 보상 ---------- */
+/* 잘 쓴 정도 → 동물 (점수 숫자는 아이에게 보여주지 않음) */
 var TIERS=[
-  {min:85,stars:3,animals:['🦁','🐯','🦄','🐬','🦋','🐉'],msgs:['최고야!','완벽해요!','와, 대단해!','정말 멋져!']},
-  {min:68,stars:2,animals:['🐰','🐼','🐨','🦊','🐶','🐷'],msgs:['참 잘했어요!','멋져요!','아주 좋아요!']},
-  {min:48,stars:1,animals:['🐥','🐸','🐧','🐹','🐱','🐮'],msgs:['잘했어요!','좋아요!','점점 잘하고 있어요!']},
-  {min:22,stars:0,animals:['🐢','🐌','🐻'],msgs:['조금만 더!','거의 다 왔어요!','한 번 더 해볼까?']},
-  {min:0,stars:0,animals:['🐣','🐻'],msgs:['글자를 따라 그려 보세요','천천히 다시 해봐요']}
+  {min:85,stars:3,animal:'🐧',name:'펭귄',msgs:['펭귄이 왔어요! 최고야!','펭귄! 완벽해요!','펭귄이 깜짝 놀랐어요! 정말 대단해!']},
+  {min:68,stars:2,animal:'🐰',name:'토끼',msgs:['토끼가 왔어요! 참 잘했어요!','토끼! 멋져요!','토끼가 좋아해요! 아주 잘했어요!']},
+  {min:48,stars:1,animal:'🐥',name:'병아리',msgs:['병아리가 왔어요! 잘했어요!','병아리! 점점 잘하고 있어요!']},
+  {min:22,stars:0,animal:'🐢',name:'거북이',msgs:['거북이가 응원해요! 조금만 더!','거북이! 천천히 한 번 더 해볼까?']},
+  {min:0,stars:0,animal:'🥚',name:'알',msgs:['글자를 따라 그려 보세요','천천히 다시 해봐요']}
 ];
 function showReward(r){
   var tier=null;for(var i=0;i<TIERS.length;i++){if(r.score>=TIERS[i].min){tier=TIERS[i];break}}
-  var animal=pick(tier.animals),msg=r.empty?'글자를 따라 그려 보세요':pick(tier.msgs);
-  var prev=results[idx];
-  if(!prev||tier.stars>prev.stars||(tier.stars===prev.stars&&r.score>prev.score))results[idx]={score:r.score,stars:tier.stars,animal:animal};
-  $('rwAnimal').textContent=animal;$('rwMsg').textContent=msg;$('rwScore').textContent=r.empty?'':r.score+'점';
+  var animal=tier.animal,msg=r.empty?'글자를 따라 그려 보세요':pick(tier.msgs);
+  if(!results[idx])results[idx]=[];
+  var prev=results[idx][rep];  /* 같은 회차를 다시 쓰면 더 좋은 결과만 남긴다 */
+  if(!prev||tier.stars>prev.stars||(tier.stars===prev.stars&&r.score>prev.score))results[idx][rep]={score:r.score,stars:tier.stars,animal:animal};
+  $('rwAnimal').textContent=animal;$('rwMsg').textContent=msg;
   var st=$('rwStars').children;
   for(var k=0;k<3;k++){st[k].classList.remove('on');void st[k].offsetWidth;if(k<tier.stars){st[k].style.animationDelay=(0.45+k*0.25)+'s';st[k].classList.add('on')}}
-  $('rwNext').textContent=idx<items.length-1?'다음 글자 →':'결과 보기';
+  var moreReps=rep<S.reps-1,moreItems=idx<items.length-1;
+  $('rwNext').textContent=moreReps?'한 번 더 →':(moreItems?'다음 글자 →':'결과 보기');
   $('reward').hidden=false;jingle(tier.stars);
   if(tier.stars===3)confetti(200);else if(tier.stars===2)confetti(70);
+  setTimeout(function(){speak(msg,{pitch:tier.stars>0?1.45:1.2,rate:0.95})},tier.stars>0?550:200);
 }
 $('doneBtn').onclick=function(){initAudio();showReward(evaluate())};
 $('rwRetry').onclick=function(){$('reward').hidden=true;strokes=[];redrawInk()};
-$('rwNext').onclick=function(){$('reward').hidden=true;if(idx<items.length-1){idx++;loadItem()}else showSummary()};
+$('rwNext').onclick=function(){$('reward').hidden=true;if(rep<S.reps-1){rep++;loadItem()}else if(idx<items.length-1){idx++;rep=0;loadItem()}else showSummary()};
 
 /* ---------- 폭죽 ---------- */
 var fx=$('fx'),fctx=fx.getContext('2d'),parts=[],fxRun=false;
@@ -395,6 +405,36 @@ function jingle(stars){initAudio();
   else if(stars===1)[523,659].forEach(function(f,i){tone(f,i*0.15,0.3)});
   else tone(392,0,0.35,0.12,'triangle')}
 
+/* ---------- 음성 (기기 내장 한국어 TTS, 외부 파일 없음) ---------- */
+var voices=[];
+function loadVoices(){try{voices=speechSynthesis.getVoices()||[]}catch(e){}}
+if('speechSynthesis' in window){loadVoices();speechSynthesis.onvoiceschanged=loadVoices}
+function koVoice(){var ko=voices.filter(function(v){return /^ko/i.test(v.lang)});
+  return ko.filter(function(v){return /google|female|여성/i.test(v.name)})[0]||ko[0]||null}
+function speak(text,opt){
+  if(!S.voice||!('speechSynthesis' in window))return;
+  opt=opt||{};
+  try{speechSynthesis.cancel()}catch(e){}
+  setTimeout(function(){try{
+    var u=new SpeechSynthesisUtterance(text);u.lang='ko-KR';u.rate=opt.rate||0.95;u.pitch=opt.pitch||1.3;u.volume=1;
+    var v=koVoice();if(v)u.voice=v;speechSynthesis.speak(u)}catch(e){}},80);
+}
+$('sayBtn').onclick=function(){if(items.length)speak(items[idx],{pitch:1.25,rate:0.85})};
+
+/* ---------- 잠금 보조: 자동 전체화면 + 뒤로가기 가로채기 ----------
+   홈 버튼·앱 전환은 웹에서 막을 수 없다 → 안드로이드 '앱 고정'을 함께 사용 */
+var kiosk=false;
+function goFullscreen(){var el=document.documentElement,f=el.requestFullscreen||el.webkitRequestFullscreen;
+  if(f&&!document.fullscreenElement){var p=f.call(el);if(p&&p.catch)p.catch(function(){})}
+  try{var tablet=Math.min(screen.width,screen.height)>=600;if(tablet&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(function(){})}catch(e){}}
+function enterKiosk(){kiosk=true;goFullscreen();try{history.pushState({play:1},'')}catch(e){}}
+function exitKiosk(){kiosk=false}
+window.addEventListener('popstate',function(){
+  if(!kiosk||$('play').hidden)return;
+  try{history.pushState({play:1},'')}catch(e){}  /* 뒤로가기를 되돌려 놓고 부모 확인창을 띄운다 */
+  if($('gate').hidden&&$('reward').hidden)gate(function(){exitKiosk();releaseWake();show('parent')});
+});
+
 /* ---------- 부모 확인 ---------- */
 var gateCb=null;
 function gate(cb){var a=2+Math.floor(Math.random()*8),b=2+Math.floor(Math.random()*8);
@@ -405,29 +445,33 @@ $('gateCancel').onclick=function(){$('gate').hidden=true;gateCb=null};
 
 /* ---------- 흐름 ---------- */
 function startPlay(){readForm();items=buildItems();if(!items.length){alert('쓸 글자를 적어 주세요.');return}
-  idx=0;results=[];show('play');wake();
+  idx=0;rep=0;results=[];show('play');wake();enterKiosk();
   var p=document.fonts&&document.fonts.load?document.fonts.load(fontStr(40)):Promise.resolve();
   p.catch(function(){}).then(function(){loadItem()});
 }
-function loadItem(){strokes=[];cur=null;activeId=null;$('prog').textContent=(idx+1)+' / '+items.length;layout()}
-function showSummary(){show('summary');releaseWake();
-  var total=results.reduce(function(a,r){return a+(r?r.stars:0)},0);
-  $('sumTotal').textContent='⭐ '+total+' / '+(items.length*3);
-  $('sumList').innerHTML=items.map(function(w,i){var r=results[i]||{stars:0,animal:'·'};
-    return '<li><span class="w">'+esc(w)+'</span><span class="st">'+'★'.repeat(r.stars)+'☆'.repeat(3-r.stars)+'</span><span class="an">'+r.animal+'</span></li>'}).join('');
-  $('parade').textContent=results.filter(function(r){return r&&r.stars>0}).map(function(r){return r.animal}).join(' ')||'🐣';
-  jingle(total>=items.length*2?3:1);if(total>=items.length*2)confetti(220);
+function loadItem(){strokes=[];cur=null;activeId=null;
+  $('prog').textContent=(idx+1)+' / '+items.length+(S.reps>1?'  ·  '+(rep+1)+'번째':'');
+  layout();
+  var w=items[idx];speak(rep===0?w+', 써 보세요':'한 번 더, '+w,{pitch:1.25,rate:0.9});
+}
+function showSummary(){show('summary');releaseWake();exitKiosk();
+  var all=[];results.forEach(function(rs){(rs||[]).forEach(function(r){if(r)all.push(r)})});
+  var total=all.reduce(function(a,r){return a+r.stars},0),max=items.length*S.reps*3;
+  $('sumTotal').textContent='⭐ '+total+' / '+max;
+  $('sumList').innerHTML=items.map(function(w,i){var rs=results[i]||[],cells='';
+    for(var k=0;k<S.reps;k++){var r=rs[k];cells+='<span class="rep">'+(r?r.animal+' '+'★'.repeat(r.stars)+'☆'.repeat(3-r.stars):'·')+'</span>'}
+    return '<li><span class="w">'+esc(w)+'</span><span class="reps">'+cells+'</span></li>'}).join('');
+  $('parade').textContent=all.filter(function(r){return r.stars>0}).map(function(r){return r.animal}).join(' ')||'🥚';
+  var good=total>=max*0.6;jingle(good?3:1);if(good)confetti(220);
+  speak(good?'오늘 정말 잘했어요! 동물 친구들이 모두 기뻐해요!':'오늘도 수고했어요! 다음에 또 해봐요!',{pitch:1.4,rate:0.95});
 }
 $('startBtn').onclick=startPlay;
-$('gearBtn').onclick=function(){gate(function(){releaseWake();show('parent')})};
+$('gearBtn').onclick=function(){gate(function(){exitKiosk();releaseWake();show('parent')})};
 $('toParentBtn').onclick=function(){gate(function(){show('parent')})};
-$('againBtn').onclick=function(){idx=0;results=[];show('play');wake();loadItem()};
+$('againBtn').onclick=function(){idx=0;rep=0;results=[];show('play');wake();enterKiosk();loadItem()};
 
 /* ---------- 전체화면 · 화면 켜짐 유지 ---------- */
-$('fsBtn').onclick=function(){var el=document.documentElement;
-  if(!document.fullscreenElement){var f=el.requestFullscreen||el.webkitRequestFullscreen;if(f){var p=f.call(el);if(p&&p.catch)p.catch(function(){})}
-    try{var tablet=Math.min(screen.width,screen.height)>=600;if(tablet&&screen.orientation&&screen.orientation.lock)screen.orientation.lock('landscape').catch(function(){})}catch(e){}}
-  else if(document.exitFullscreen)document.exitFullscreen()};
+$('fsBtn').onclick=function(){if(!document.fullscreenElement)goFullscreen();else if(document.exitFullscreen)document.exitFullscreen()};
 var wl=null;
 function wake(){if(navigator.wakeLock){navigator.wakeLock.request('screen').then(function(l){wl=l}).catch(function(){})}}
 function releaseWake(){if(wl){wl.release().catch(function(){});wl=null}}
